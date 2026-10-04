@@ -1,0 +1,30 @@
+# https://editorconfig.org — also read by ktlint (via Spotless) and Android Studio.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 120
+
+[*.{kt,kts}]
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ktlint_code_style = ktlint_official
+# Composable functions are PascalCase by convention.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+# Compose rules: the only CompositionLocal the app defines (extended theme colors).
+compose_allowed_composition_locals = LocalSpaceSaverColors
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+[*.bat]
+end_of_line = crlf

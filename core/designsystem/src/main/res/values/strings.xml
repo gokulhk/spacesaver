@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SavingsBanner -->
+    <string name="savings_banner_title">Space saved</string>
+    <string name="savings_banner_lifetime">Lifetime</string>
+    <string name="savings_banner_today">Today</string>
+    <!-- Read by TalkBack as one phrase. %1$s = lifetime amount, %2$s = today's amount (spoken form). -->
+    <string name="savings_banner_description">Saved %1$s lifetime, %2$s today</string>
+
+    <!-- StorageBar -->
+    <!-- %1$s = used space, %2$s = total space. -->
+    <string name="storage_used_of_total">%1$s used of %2$s</string>
+    <string name="storage_category_videos">Videos</string>
+    <string name="storage_category_images">Images</string>
+    <string name="storage_category_other">Other</string>
+    <string name="storage_category_free">Free</string>
+    <!-- %1$s = category name, %2$s = size (spoken form). -->
+    <string name="storage_segment_description">%1$s, %2$s</string>
+
+    <!-- PlanSummaryCard -->
+    <string name="plan_show_batches">Show batches</string>
+    <string name="plan_hide_batches">Hide batches</string>
+
+    <!-- SuggestionCard -->
+    <!-- %1$s = estimated savings, e.g. "~10.8 GB". -->
+    <string name="suggestion_saves">Save %1$s</string>
+    <string name="suggestion_change_preset">Change quality preset</string>
+
+    <!-- MediaListRow -->
+    <string name="media_selected">Selected</string>
+    <string name="media_select_action">Select</string>
+
+    <!-- BeforeAfterSlider -->
+    <string name="before_after_before">Before</string>
+    <string name="before_after_after">After</string>
+    <string name="before_after_description">Before and after comparison</string>
+    <!-- %1$d = percentage of the image showing the original. -->
+    <string name="before_after_state">Showing %1$d%% original</string>
+
+    <!-- BatchProgressRow -->
+    <string name="progress_status_queued">Waiting</string>
+    <!-- %1$d = percentage complete. -->
+    <string name="progress_status_in_progress">Converting, %1$d%%</string>
+    <string name="progress_status_done">Done</string>
+    <string name="progress_status_failed">Failed</string>
+    <string name="progress_status_skipped">Skipped, not enough space</string>
+    <!-- %1$s = status, %2$s = extra detail such as "Saved 820 MB". -->
+    <string name="progress_status_with_detail">%1$s · %2$s</string>
+</resources>

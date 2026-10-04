@@ -1,0 +1,64 @@
+# Overrides on top of detekt's default configuration (buildUponDefaultConfig = true).
+# Keep this file small: only list rules whose defaults conflict with the plan or with Compose.
+
+config:
+  validation: true
+  # Third-party rule sets (Compose rules) are not known to detekt's config validator.
+  excludes: 'Compose>.*'
+  warningsAsErrors: true
+
+complexity:
+  LongMethod:
+    # Plan Section 2.2: keep functions short (aim for <= 30 lines).
+    threshold: 30
+    ignoreAnnotated: ['Composable', 'Preview', 'Test']
+    excludes: ['**/test/**', '**/androidTest/**']
+  LongParameterList:
+    # Composables take many optional parameters (modifier, colors, callbacks) by design.
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    ignorePrivate: true
+    excludes: ['**/test/**', '**/androidTest/**']
+
+naming:
+  FunctionNaming:
+    # Composables are PascalCase; test names use backtick sentences.
+    ignoreAnnotated: ['Composable']
+    excludes: ['**/test/**', '**/androidTest/**']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+
+style:
+  MagicNumber:
+    # Plan Section 2.2: no magic numbers in production code. Tests and previews may use literals.
+    ignorePropertyDeclaration: true
+    ignoreAnnotated: ['Preview', 'PreviewLightDark', 'PreviewComponents']
+    # :core:testing holds test builders whose defaults are literal sample values.
+    excludes: ['**/test/**', '**/androidTest/**', '**/*.kts', '**/core/testing/**']
+  UnusedPrivateMember:
+    # Previews are used by the IDE, not by code. PreviewLightDark and PreviewComponents are
+    # multipreview annotations from :core:designsystem.
+    ignoreAnnotated: ['Preview', 'PreviewLightDark', 'PreviewComponents']
+  ReturnCount:
+    # Early `?: return` / `if (...) return` guard clauses are idiomatic Kotlin.
+    excludeGuardClauses: true
+    excludeReturnFromLambda: true
+  ForbiddenComment:
+    # TODOs are allowed only when they reference a plan task or an issue, e.g. "TODO(5.3): ...".
+    comments:
+      - value: 'FIXME:'
+        reason: 'Fix it before handing the phase over.'
+      - value: 'STOPSHIP:'
+        reason: 'Must be resolved before release.'
+      - value: 'TODO:'
+        reason: 'Reference a plan task or issue, e.g. TODO(5.3): ...'
+
+# Compose rules (io.nlopez.compose.rules:detekt).
+Compose:
+  CompositionLocalAllowlist:
+    active: true
+    allowedCompositionLocals: ['LocalSpaceSaverColors']
+  ModifierMissing:
+    active: true
+  ViewModelForwarding:
+    active: true

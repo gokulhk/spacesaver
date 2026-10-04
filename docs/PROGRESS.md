@@ -1,0 +1,141 @@
+# Progress
+
+Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it meets the Definition of Done, and note anything a human should know.
+
+## Phase 0 — Project bootstrap
+
+- [x] **0.1 Repository and build skeleton**
+  - Every module from the module map exists with a build script and a README. Convention plugins live in `build-logic/`. Versions are pinned in `gradle/libs.versions.toml`.
+  - Smoke tests in `:core:domain` and `:app`. `./gradlew assembleDebug test` passes.
+  - Note: `:core:testing` is a **pure Kotlin** module, so JVM modules (`:core:domain`) can use its fakes too. Android-only test helpers will get their own module if they are needed.
+  - Note: `local.properties` (gitignored) must point `sdk.dir` at the Android SDK unless `ANDROID_HOME` is set.
+- [x] **0.2 Code quality tooling**
+  - `./gradlew check` runs unit tests, Android Lint (warnings as errors, all 16 modules), detekt (with Compose rules), ktlint via Spotless (with Compose rules), and Kover verification.
+  - Coverage: `:core:domain` ≥ 90% lines, whole project ≥ 70% lines. Generated code (Hilt, Room, Compose singletons) and `@Composable`/`@Preview` functions are excluded.
+  - Each tool was checked to make sure it fails the build on a violation.
+- [x] **0.3 CI**
+  - `.github/workflows/ci.yml`: on PRs and pushes to `main`, runs `check`, builds the debug APK, and uploads reports and the APK.
+  - `.github/workflows/instrumented.yml`: nightly and on demand, runs instrumented tests on API 30 and API 37.
+  - Note: the workflows have not run on GitHub yet because the repository has no remote.
+- [x] **0.4 Open-source scaffolding**
+  - LICENSE (Apache-2.0), CONTRIBUTING, CODE_OF_CONDUCT (Contributor Covenant 2.1), SECURITY, issue and PR templates, `.editorconfig`, ADR template and ADRs 0001–0005.
+  - Open: `CODE_OF_CONDUCT.md` still says `[INSERT CONTACT METHOD]`. The maintainer needs to supply a contact.
+
+## Phase 1 — Design system and theme
+
+- [x] **1.1 Palette and color schemes**
+  - `LightColors`, `DarkColors`, and `SpaceSaverColors` match plan Section 6.2; `PaletteTest` pins every value.
+  - Note: Material roles the plan doesn't list (surface containers, inverse, dim/bright) are derived teal-greys so components never show Material's purple baseline. Values are in ADR-0005.
+- [x] **1.2 Contrast test**
+  - `ContrastTest` checks every on-color pair, text on all surface containers, outlines, and the extended tokens in both schemes. All pass; no hex adjustments were needed.
+- [x] **1.3 Theme composable and theme mode**
+  - `ThemeMode` (in `:core:model`) and `SpaceSaverTheme(themeMode)`. Robolectric tests cover SYSTEM following night mode, LIGHT/DARK overriding it, and status/navigation bar icon contrast. `MainActivity` uses the theme.
+  - Note: JVM tests now run on JDK 21 so Robolectric can emulate API 37 (ADR-0006). Compilation stays on JDK 17.
+- [x] **1.4 Typography, shapes, spacing tokens**
+  - System-font type scale with tabular figures on `displaySmall`; shapes 8/12/16/28 dp; `Spacing` object. Pinned by `ThemeTokensTest`.
+- [x] **1.5 Shared components**
+  - All 11 components from plan Section 6.4, stateless, with light/dark/200% font previews (`@PreviewComponents`).
+  - Behavior tests for every component (slider drag and accessibility action, storage bar spoken labels, plan expand/blocked, suggestion toggle, media row click/long-press/selection, dialog buttons, 48 dp touch target).
+  - 15 Roborazzi screenshots (light above dark in one image; dialog separately). `verifyRoborazziDebug` runs in CI.
+  - Note: components take pre-formatted `SizeText(display, spoken)`; the byte formatter arrives in `:core:ui` later. Thumbnails are slots, so the design system doesn't depend on Coil.
+
+## Phase 2 — Domain models and pure logic
+
+- [x] **2.1 Value objects** (`:core:model`)
+  - `ByteSize` (SI units, non-negative, saturating `minusOrZero`, locale-aware formatting), `Bitrate`, `Resolution`, `MediaItem` (+ `VideoDetails`, `AudioTrack`), `MediaFormat.fromMimeType`, `VideoPreset`/`VideoCodec`, `ImageFormatPreference`.
+  - Note: presets compare the **short edge**, so portrait 4K videos count as 4K.
+  - Note: video formats identify the codec, not the container (an HEVC `.mov` is `MP4_HEVC`). Videos with an unknown codec are `VIDEO_OTHER`.
+  - Note: MB and above always show one decimal, as specified (`"1.0 MB"`, `"128.0 GB"`). Say if whole numbers should drop the `.0`.
+- [x] **2.2 Eligibility rules**
+  - `VideoEligibility`, `ImageEligibility`, `SavingsThresholds` (20% and 5 MB / 200 KB), `PngContentClassifier` (unique-color ratio on a downscaled sample), `TargetSelection` (HEVC vs H.264, HEIC vs WebP).
+  - Note: built after 2.3 because "saving < 20%" needs the estimators.
+  - Note: unclassified PNGs are treated as graphics (lossless WebP), so nothing unclassified is ever compressed lossily.
+- [x] **2.3 Estimators**
+  - `VideoSavingsEstimator` (plan formula, source bitrate when lower, AAC passthrough or 128 kbps re-encode), `ImageSavingsEstimator` (priors with ±15% range, calibrated ratios exact), `RatioCalibrator` (median after dropping values beyond 3×IQR, at least 3 samples), `ProcessingSpeed`.
+- [x] **2.4 Batch planner**
+  - `BatchPlanner.planNext`, `BatchPlanConfig` (1.2 safety factor, 25 items), `ReservePolicy` (max(1 GB, 5%), user minimum 500 MB). Ties in savings are broken by media ID so plans are deterministic.
+- [x] **2.5 Plan simulator**
+  - `PlanSimulator` and `ConversionPlan` with per-batch savings, space needed, and duration.
+- [x] **2.6 Batch state machine**
+  - `BatchStateMachine` (all transitions table-tested), `ReviewOptions` ("Keep both" only when the next item fits), `DomainResult`/`DomainError`.
+  - Note: added an item `CANCELLED` state (Task 5.1 needs it, the plan's list doesn't have it) and `DomainError.InvalidTransition`, `NothingToConvert`, `BatchNotFound`.
+- [x] **2.7 Savings calculations**
+  - `SavingsCalculator`, `SavingsEvent`, `SavingsSummary`. Outputs that aren't smaller are rejected, so savings can't be negative. Today's boundary is tested across zones and DST changes (including a day whose midnight didn't exist).
+- [x] **2.8 Repository interfaces and use cases**
+  - Ports: `MediaRepository`, `StorageRepository`, `SavingsRepository`, `BatchRepository`, `SettingsRepository`, `ConverterRegistry` (+ `MediaConverter`, plan 4.4), `DeletionGateway`, `EncoderCapabilities`, plus `CalibrationRepository`, `BatchScheduler`, and `ZoneProvider`.
+  - Use cases: `ObserveSavingsSummary`, `ObserveStorageOverview`, `ObserveSuggestions`, `BuildConversionPlan`, `StartNextBatch`, `ResolveBatchReview`, `DeleteMediaItems`, `ObserveMediaBySize`; shared `StorageBudget`.
+  - Fakes for every port, `TestClock`, `MainDispatcherRule`, and builders (`aVideo`, `anImage`, `aCandidate`, `aBatchItem`) in `:core:testing`.
+  - Note: `SavingsRepository.observeTotals(todayStart)` returns lifetime and today together. Two separate flows briefly showed a half-updated banner.
+  - Note: `:core:domain` depends on `paging-common` (pure Kotlin) so Browse stays paged for 50k+ items.
+  - Coverage: `:core:domain` 95.5% lines, 91.2% branches.
+
+## Phase 3 — Data layer
+
+- [x] **3.1 Room database** (`:core:database`)
+  - Entities `SavingsEventEntity`, `BatchEntity`/`BatchItemEntity`, `ConvertedFileEntity`, `CalibrationEntity` (table `calibration_samples`), DAOs, `SpaceSaverDatabase` v1, `Migrations.ALL`, Hilt `DatabaseModule`. Schema exported to `core/database/schemas/` (commit it).
+  - Lifetime and today totals come from **one** SQL query. Batch items snapshot the original's metadata so a batch can be reviewed even if MediaStore changes.
+  - Migration harness: opens v1 from the exported schema and checks the migration chain is contiguous.
+  - Note: Room's plugin only feeds schemas to instrumented tests, so the convention also adds them to **debug** assets for Robolectric. Release builds never contain them.
+- [x] **3.2 Settings DataStore** (`:core:datastore`)
+  - `SettingsDataSource` + `StoredSettings`; unknown or out-of-range stored values fall back per field; a corrupt file is replaced with defaults.
+- [x] **3.3 MediaStore scanner** (`:core:data`)
+  - `MediaStoreScanner` (Bundle query args, size/date sort with `_ID` tie-break, change observation, revoked permission returns empty) and `MediaStorePagingSource` (offset keys).
+  - Tested against `FakeMediaStoreProvider`, a real `ContentProvider` backed by in-memory SQLite, so sorting and paging go through SQL.
+  - Note: MediaStore doesn't expose the audio codec; videos are assumed to have AAC audio (what phone cameras record) for estimates. Phase 4's converter inspects the real track.
+- [x] **3.4 Storage stats**
+  - `StorageStatsSource` wrapper (`StorageStatsManager`, `StatFs` fallback); `StorageRepositoryImpl` re-emits on `refresh()` and on library changes; free space is clamped to total.
+- [x] **3.5 Repository implementations**
+  - `MediaRepositoryImpl` (marks SpaceSaver outputs by ID or path/size/time fingerprint), `StorageRepositoryImpl`, `SavingsRepositoryImpl`, `BatchRepositoryImpl` (review applied in one transaction), `SettingsRepositoryImpl`, `CalibrationRepositoryImpl`; Hilt `DataModule`.
+  - `:app` `AppModule` provides `Clock`, `ZoneProvider`, `@Dispatcher(IO/DEFAULT)`, `BatchPlanConfig`, `SavingsThresholds`. `DependencyGraphTest` builds the real Hilt graph on Robolectric.
+  - Note: Robolectric now applies to every Android module (it used to be Compose-only).
+  - Note: lint skips `:app` **test** sources because lint 9.2 crashes on `@HiltAndroidTest` classes. Production lint is unchanged.
+  - Not yet implemented (later phases): `DeletionGateway` (6.1), `EncoderCapabilities` (4.2), `ConverterRegistry` (4.1), `BatchScheduler` (5.3).
+
+## Phase 4 — Media engine
+
+- [ ] 4.0 Test fixtures
+- [ ] 4.1 Converter registry
+- [ ] 4.2 Encoder capabilities ⚠️ SPIKE
+- [ ] 4.3 Video converter (Media3 Transformer)
+- [ ] 4.4 Image converters
+- [ ] 4.5 Metadata preservation ⚠️ SPIKE
+- [ ] 4.6 Output writer and verification
+
+## Phase 5 — Batch execution
+
+- [ ] 5.1 Batch runner
+- [ ] 5.2 Free-space monitor
+- [ ] 5.3 WorkManager worker and foreground notification ⚠️ SPIKE
+- [ ] 5.4 Resume and orphan cleanup
+
+## Phase 6 — Deletion and savings ledger
+
+- [ ] 6.1 Deletion gateway
+- [ ] 6.2 Ledger integration
+- [ ] 6.3 Midnight rollover
+
+## Phase 7 — Feature UI
+
+- [ ] 7.1 Onboarding/permissions
+- [ ] 7.2 Home
+- [ ] 7.3 Browse
+- [ ] 7.4 Plan detail
+- [ ] 7.5 Batch progress
+- [ ] 7.6 Batch review
+- [ ] 7.7 Settings
+- [ ] 7.8 Navigation
+
+## Phase 8 — Hardening
+
+- [ ] 8.1 Performance
+- [ ] 8.2 Privacy guard
+- [ ] 8.3 Accessibility pass
+- [ ] 8.4 Localization readiness
+- [ ] 8.5 Release build
+
+## Phase 9 — Documentation pass and release prep
+
+- [ ] 9.1 KDoc and Dokka
+- [ ] 9.2 README, CONTRIBUTING, ARCHITECTURE, module READMEs
+- [ ] 9.3 Fastlane metadata for F-Droid
+- [ ] 9.4 Release workflow

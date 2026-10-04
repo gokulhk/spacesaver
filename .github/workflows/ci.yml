@@ -1,0 +1,64 @@
+# Runs everything a contributor runs locally with `./gradlew check`, then builds the debug APK.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      # 21 runs unit tests (Robolectric); 17 is listed last so it is the default and compiles.
+      - name: Set up JDK 21 and 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            17
+
+      # Caches Gradle dependencies and build outputs, and validates the Gradle wrapper checksum.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Check (unit tests, lint, detekt, ktlint, coverage)
+        run: ./gradlew check --continue
+
+      - name: Verify screenshots against committed baselines
+        run: ./gradlew verifyRoborazziDebug
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload test and quality reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            **/build/reports/
+            **/build/test-results/
+            **/build/outputs/roborazzi/
+          if-no-files-found: ignore
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: spacesaver-debug-apk
+          path: app/build/outputs/apk/debug/*.apk

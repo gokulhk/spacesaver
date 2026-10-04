@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Shared Android Lint configuration. Lint runs with warningsAsErrors=true, so every
+    exception below must explain why it is safe.
+-->
+<lint>
+    <!--
+        Version-freshness checks depend on network lookups and on the release calendar of
+        other projects, which would make `./gradlew check` fail on an unchanged codebase.
+        Dependency updates are handled deliberately via gradle/libs.versions.toml instead.
+    -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="OldTargetApi" severity="ignore" />
+</lint>
