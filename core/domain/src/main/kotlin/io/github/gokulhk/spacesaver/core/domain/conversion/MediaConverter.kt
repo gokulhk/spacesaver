@@ -50,7 +50,8 @@ data class ConversionInput(
 /** Outcome of one conversion. */
 sealed interface ConversionResult {
     /**
-     * Converted, verified, and published.
+     * Converted into a **pending** MediaStore entry (hidden from other apps). The batch runner then
+     * verifies it and publishes it, or discards it (plan Section 5.8).
      *
      * @property outputUri the output's content URI.
      * @property outputSize the output's size on disk.

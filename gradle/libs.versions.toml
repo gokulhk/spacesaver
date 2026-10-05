@@ -83,6 +83,7 @@ androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androi
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-media3-effect = { module = "androidx.media3:media3-effect", version.ref = "androidxMedia3" }
+androidx-media3-muxer = { module = "androidx.media3:media3-muxer", version.ref = "androidxMedia3" }
 androidx-media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "androidxMedia3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 androidx-paging-common = { module = "androidx.paging:paging-common", version.ref = "androidxPaging" }

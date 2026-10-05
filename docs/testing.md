@@ -27,6 +27,16 @@ Every Android module gets Robolectric (emulating API 37 on a JDK 21 test JVM, AD
 - **DataStore:** a real store on a `TemporaryFolder` file; no Android needed.
 - **Hilt:** `DependencyGraphTest` in `:app` builds the real graph with `HiltTestApplication`.
 
+## Instrumented tests (`:core:media`)
+
+Converters run against the device's real codecs and MediaStore:
+
+- Fixtures from `core/media/src/androidTest/assets/` (see `fixtures/README.md`) are copied into MediaStore in a unique `DCIM/SpaceSaverTest<n>/` folder and deleted after each test.
+- The emulator must have **no screen lock**: Android refuses to start instrumentation while the user's storage is locked ("not encryption aware"). Use a dedicated AVD, e.g. one named `SpaceSaver_Test_API_36` (API 36.1, arm64).
+- Run a single test with `-Pandroid.testInstrumentationRunnerArguments.class=<Class>#<method>`.
+- Use `requireSuccess()` on conversion results: a failure then shows the underlying exception chain.
+- Inside `runTest`, use `withContext(Dispatchers.Default)` before `withTimeout` when waiting on real work: `runTest` uses virtual time.
+
 ## Compose UI tests
 
 Use the `androidx.compose.ui.test.junit4.v2` rule factories (`createComposeRule`, `createAndroidComposeRule`); the original factories are deprecated and warnings fail the build.

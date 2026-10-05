@@ -93,13 +93,17 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
 
 ## Phase 4 — Media engine
 
-- [ ] 4.0 Test fixtures
-- [ ] 4.1 Converter registry
-- [ ] 4.2 Encoder capabilities ⚠️ SPIKE
-- [ ] 4.3 Video converter (Media3 Transformer)
-- [ ] 4.4 Image converters
-- [ ] 4.5 Metadata preservation ⚠️ SPIKE
-- [ ] 4.6 Output writer and verification
+- [x] **4.0 Test fixtures**: `fixtures/generate.sh` (ffmpeg), 7.5 MB committed under `core/media/src/androidTest/assets/`. EXIF is stamped and the screenshot is drawn on-device by the tests (see `fixtures/README.md`).
+- [x] **4.1 Converter registry**: `DefaultConverterRegistry` over a Hilt `@IntoSet` multibinding.
+- [x] **4.2 Encoder capabilities ⚠️ SPIKE**: `EncoderCapabilityRules` (pure) + `AndroidEncoderCapabilities`; `ConversionSpecResolver` in the domain. Findings: `docs/spikes/encoder-capabilities.md`.
+  - Note: the emulator has only software encoders, so the app picks H.264 and WebP there. **Physical device run still outstanding.**
+- [x] **4.3 Video converter**: `Media3VideoConverter` writes straight into the pending MediaStore entry through a custom `StreamMp4MuxerFactory` (see `docs/spikes/video-output-path.md`). Tested: 4K → 1080p, smaller, H.264 + AAC tracks, progress reaches 1.0, cancellation leaves no output.
+- [x] **4.4 Image converters**: `WebpImageConverter` (lossy/lossless) and `HeicImageConverter` (HeifWriter). Pixels stay unrotated; orientation is kept as metadata.
+  - Note: for a picture-heavy screenshot, lossless WebP came out ~9% **larger** than Android's PNG. The verifier rejects such outputs. Text-heavy screenshots, the common case, shrink.
+- [x] **4.5 Metadata preservation ⚠️ SPIKE**: EXIF date/offset, GPS, orientation, make/model and `Software=SpaceSaver` for WebP and HEIC; creation time and location for video; MediaStore `DATE_TAKEN` matches after publishing. `DATE_MODIFIED` can't be preserved. Findings: `docs/spikes/metadata-preservation.md`.
+- [x] **4.6 Output writer and verification**: `MediaStoreOutputWriter` (pending rows in the original's folder, `_compressed` suffix, fallback folders), `OutputNaming`, `OutputVerification` (pure), `AndroidOutputProbe` (strict image decode; first **and last** video frame).
+  - Note: converters now return a **pending** output; the Phase 5 runner verifies and publishes it.
+  - Tests: 25 JVM tests in `:core:media`, 7 in the domain, and 27 instrumented tests, all passing on the `SpaceSaver_Test_API_36` emulator.
 
 ## Phase 5 — Batch execution
 
