@@ -18,7 +18,8 @@ complexity:
     ignoreAnnotated: ['Composable']
   TooManyFunctions:
     ignorePrivate: true
-    excludes: ['**/test/**', '**/androidTest/**']
+    # Fakes in :core:testing implement whole ports, so their size follows the interface.
+    excludes: ['**/test/**', '**/androidTest/**', '**/core/testing/**']
 
 naming:
   FunctionNaming:

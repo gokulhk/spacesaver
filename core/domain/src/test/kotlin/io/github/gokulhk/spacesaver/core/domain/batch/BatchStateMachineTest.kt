@@ -86,6 +86,7 @@ class BatchStateMachineTest {
                 Triple(ItemStatus.CONVERTING, ItemEvent.CONVERSION_FAILED, ItemStatus.FAILED),
                 Triple(ItemStatus.CONVERTING, ItemEvent.SKIPPED_NO_SPACE, ItemStatus.SKIPPED_NO_SPACE),
                 Triple(ItemStatus.CONVERTING, ItemEvent.CANCEL, ItemStatus.CANCELLED),
+                Triple(ItemStatus.CONVERTING, ItemEvent.RESET, ItemStatus.QUEUED),
                 Triple(ItemStatus.CONVERTED, ItemEvent.ACCEPT, ItemStatus.ACCEPTED),
                 Triple(ItemStatus.CONVERTED, ItemEvent.REJECT, ItemStatus.REJECTED),
                 Triple(ItemStatus.ACCEPTED, ItemEvent.REJECT, ItemStatus.REJECTED),
@@ -116,6 +117,8 @@ class BatchStateMachineTest {
                 ItemStatus.FAILED to ItemEvent.START_CONVERSION,
                 ItemStatus.ORIGINAL_DELETED to ItemEvent.REJECT,
                 ItemStatus.CANCELLED to ItemEvent.START_CONVERSION,
+                ItemStatus.CONVERTED to ItemEvent.RESET,
+                ItemStatus.QUEUED to ItemEvent.RESET,
             )
 
         illegal.forEach { (from, event) ->

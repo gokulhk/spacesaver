@@ -95,7 +95,7 @@ class BatchDaoTest {
         runTest {
             val id = dao.insertBatchWithItems(BatchEntity(status = "COMPLETED", createdAtMillis = 0), listOf(item(0)))
 
-            dao.deleteBatch(id)
+            database.openHelper.writableDatabase.execSQL("DELETE FROM batches WHERE id = $id")
 
             assertThat(dao.getBatch(id)).isNull()
             val remainingItems =
@@ -104,6 +104,60 @@ class BatchDaoTest {
                     it.getInt(0)
                 }
             assertThat(remainingItems).isEqualTo(0)
+        }
+
+    @Test
+    fun `updating status without an output keeps the recorded output`() =
+        runTest {
+            val id = dao.insertBatchWithItems(BatchEntity(status = "CONVERTING", createdAtMillis = 0), listOf(item(0)))
+            val itemId =
+                dao
+                    .getBatch(id)!!
+                    .items
+                    .single()
+                    .id
+            dao.updateItem(itemId, status = "CONVERTED", outputUri = "content://out/1", outputSizeBytes = 123)
+
+            dao.updateItem(itemId, status = "ACCEPTED", outputUri = null, outputSizeBytes = null)
+
+            val stored = dao.getBatch(id)!!.items.single()
+            assertThat(stored.status).isEqualTo("ACCEPTED")
+            assertThat(stored.outputUri).isEqualTo("content://out/1")
+            assertThat(stored.outputSizeBytes).isEqualTo(123)
+        }
+
+    @Test
+    fun `batches in any of several statuses`() =
+        runTest {
+            val planned =
+                dao.insertBatchWithItems(
+                    BatchEntity(status = "PLANNED", createdAtMillis = 0),
+                    listOf(item(0)),
+                )
+            val converting =
+                dao.insertBatchWithItems(
+                    BatchEntity(status = "CONVERTING", createdAtMillis = 1),
+                    listOf(item(0)),
+                )
+            dao.insertBatchWithItems(BatchEntity(status = "COMPLETED", createdAtMillis = 2), listOf(item(0)))
+
+            val found = dao.getBatchesWithStatuses(listOf("PLANNED", "CONVERTING"))
+
+            assertThat(found.map { it.batch.id }).containsExactly(planned, converting).inOrder()
+        }
+
+    @Test
+    fun `output URIs referenced by any item`() =
+        runTest {
+            val id =
+                dao.insertBatchWithItems(
+                    BatchEntity(status = "CONVERTING", createdAtMillis = 0),
+                    listOf(item(0), item(1)),
+                )
+            val first = dao.getBatch(id)!!.items.minBy { it.position }
+            dao.updateItem(first.id, status = "CONVERTED", outputUri = "content://out/1", outputSizeBytes = 1)
+
+            assertThat(dao.outputUris()).containsExactly("content://out/1")
         }
 
     private fun item(position: Int) =

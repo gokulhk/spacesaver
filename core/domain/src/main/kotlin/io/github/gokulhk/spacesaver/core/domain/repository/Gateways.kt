@@ -1,8 +1,16 @@
 package io.github.gokulhk.spacesaver.core.domain.repository
 
+import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpec
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
+import io.github.gokulhk.spacesaver.core.domain.estimate.ConversionPair
 import io.github.gokulhk.spacesaver.core.domain.estimate.ProcessingSpeed
+import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
+import io.github.gokulhk.spacesaver.core.model.ByteSize
+import io.github.gokulhk.spacesaver.core.model.MediaFormat
+import io.github.gokulhk.spacesaver.core.model.MediaId
+import io.github.gokulhk.spacesaver.core.model.MediaItem
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.time.ZoneId
 
 /** Whether the user approved a deletion in the system dialog. */
@@ -35,6 +43,38 @@ interface EncoderCapabilities {
     suspend fun supportsHeicEncoding(): Boolean
 }
 
+/** A measurement from a completed conversion, used to calibrate estimates (plan Section 5.4). */
+sealed interface CalibrationSample {
+    /**
+     * Output/original size ratio.
+     *
+     * @property pair the conversion.
+     * @property ratio output size divided by original size.
+     */
+    data class Ratio(
+        val pair: ConversionPair,
+        val ratio: Double,
+    ) : CalibrationSample
+
+    /**
+     * Seconds of processing per second of video.
+     *
+     * @property factor the measured factor.
+     */
+    data class VideoSpeed(
+        val factor: Double,
+    ) : CalibrationSample
+
+    /**
+     * Seconds of processing for one image.
+     *
+     * @property seconds the measured time.
+     */
+    data class ImageSpeed(
+        val seconds: Double,
+    ) : CalibrationSample
+}
+
 /** Port: measured compression ratios and processing speed. */
 interface CalibrationRepository {
     /** Calibrated ratios per conversion pair. */
@@ -42,6 +82,52 @@ interface CalibrationRepository {
 
     /** Calibrated processing speed. */
     fun observeProcessingSpeed(): Flow<ProcessingSpeed>
+
+    /** Stores a measurement; old samples are pruned so calibration follows recent behavior. */
+    suspend fun record(sample: CalibrationSample)
+}
+
+/**
+ * A converted output after publishing.
+ *
+ * @property mediaId its MediaStore ID.
+ * @property uri its content URI.
+ * @property relativePath its folder.
+ * @property displayName its file name.
+ * @property size its size.
+ * @property dateModified its modification time.
+ * @property format its format.
+ */
+data class PublishedOutput(
+    val mediaId: MediaId,
+    val uri: String,
+    val relativePath: String?,
+    val displayName: String,
+    val size: ByteSize,
+    val dateModified: Instant,
+    val format: MediaFormat,
+)
+
+/** Port: checks, publishes, and cleans up converter outputs (plan Section 5.8). */
+interface OutputGateway {
+    /**
+     * Checks a pending output of [original] converted with [spec]: it decodes, has the expected
+     * dimensions, and is smaller. Returns its size, or an `OutputVerificationFailed` error.
+     */
+    suspend fun verify(
+        original: MediaItem,
+        outputUri: String,
+        spec: ConversionSpec,
+    ): DomainResult<ByteSize>
+
+    /** Makes a verified output visible to other apps. */
+    suspend fun publish(outputUri: String): PublishedOutput
+
+    /** Deletes an output SpaceSaver wrote. */
+    suspend fun discard(outputUri: String)
+
+    /** URIs of SpaceSaver's outputs still pending (not yet published), e.g. after the process died. */
+    suspend fun pendingOutputs(): List<String>
 }
 
 /** Port: runs batches in the background (WorkManager, plan Task 5.3). */
@@ -51,6 +137,12 @@ interface BatchScheduler {
         batchId: BatchId,
         chargingOnly: Boolean,
     )
+
+    /** Whether work for [batchId] is waiting or running, so nothing else should touch it. */
+    suspend fun isScheduled(batchId: BatchId): Boolean
+
+    /** Stops [batchId]'s work, if any. */
+    suspend fun cancel(batchId: BatchId)
 }
 
 /** Port: the device's current time zone, read on each call so "today" follows travel. */

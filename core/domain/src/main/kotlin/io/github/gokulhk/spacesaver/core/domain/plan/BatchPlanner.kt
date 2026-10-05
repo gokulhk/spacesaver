@@ -43,7 +43,10 @@ class BatchPlanner
         private val config: BatchPlanConfig,
     ) {
         /** Space reserved for [candidate]'s output: the estimate times the safety factor. */
-        fun costOf(candidate: PlanCandidate): ByteSize = candidate.estimatedOutput * config.safetyFactor
+        fun costOf(candidate: PlanCandidate): ByteSize = costOf(candidate.estimatedOutput)
+
+        /** Space reserved for an output estimated at [estimatedOutput]. */
+        fun costOf(estimatedOutput: ByteSize): ByteSize = estimatedOutput * config.safetyFactor
 
         /** Plans the next batch from [candidates] given current [freeSpace] and [reserve]. */
         fun planNext(

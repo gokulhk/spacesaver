@@ -6,10 +6,13 @@ import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
+import io.github.gokulhk.spacesaver.core.domain.repository.PublishedOutput
 import io.github.gokulhk.spacesaver.core.domain.repository.ReviewUpdate
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsEvent
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsType
 import io.github.gokulhk.spacesaver.core.model.ByteSize
+import io.github.gokulhk.spacesaver.core.model.MediaFormat
+import io.github.gokulhk.spacesaver.core.model.MediaId
 import io.github.gokulhk.spacesaver.core.model.MediaType
 import io.github.gokulhk.spacesaver.core.model.VideoPreset
 import io.github.gokulhk.spacesaver.core.testing.TestClock
@@ -18,12 +21,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class BatchRepositoryImplTest {
     private val database = inMemoryDatabase()
     private val clock = TestClock()
-    private val repository = BatchRepositoryImpl(database, database.batchDao(), database.savingsDao(), clock)
+    private val repository =
+        BatchRepositoryImpl(database, database.batchDao(), database.savingsDao(), database.convertedFileDao(), clock)
     private val video =
         aCandidate(id = 1, original = ByteSize.megabytes(400), output = ByteSize.megabytes(60), type = MediaType.VIDEO)
     private val image = aCandidate(id = 2, original = ByteSize.megabytes(5), output = ByteSize.megabytes(2))
@@ -117,6 +122,68 @@ class BatchRepositoryImplTest {
 
                 assertThat(awaitItem()?.status).isEqualTo(BatchStatus.CONVERTING)
             }
+        }
+
+    @Test
+    fun `item and batch updates are stored`() =
+        runTest {
+            val batch = repository.create(listOf(image))
+            val item = batch.items.single()
+
+            repository.updateBatchStatus(batch.id, BatchStatus.CONVERTING)
+            repository.updateItem(item.id, ItemStatus.CONVERTING)
+            repository.updateItem(item.id, ItemStatus.CONVERTED, "content://out/2", ByteSize.megabytes(2))
+
+            val stored = repository.get(batch.id)!!
+            assertThat(stored.status).isEqualTo(BatchStatus.CONVERTING)
+            assertThat(stored.items.single().status).isEqualTo(ItemStatus.CONVERTED)
+            assertThat(stored.items.single().outputUri).isEqualTo("content://out/2")
+            assertThat(stored.items.single().outputSize).isEqualTo(ByteSize.megabytes(2))
+        }
+
+    @Test
+    fun `unfinished batches are those planned or converting`() =
+        runTest {
+            val planned = repository.create(listOf(image))
+            val converting = repository.create(listOf(video))
+            val reviewing = repository.create(listOf(image))
+            repository.updateBatchStatus(converting.id, BatchStatus.CONVERTING)
+            repository.updateBatchStatus(reviewing.id, BatchStatus.AWAITING_REVIEW)
+
+            assertThat(repository.unfinishedBatches().map { it.id }).containsExactly(planned.id, converting.id)
+        }
+
+    @Test
+    fun `referenced output URIs come from every item`() =
+        runTest {
+            val batch = repository.create(listOf(video, image))
+            repository.updateItem(batch.items[0].id, ItemStatus.CONVERTED, "content://out/1", ByteSize.megabytes(60))
+
+            assertThat(repository.referencedOutputUris()).containsExactly("content://out/1")
+        }
+
+    @Test
+    fun `recording a converted file stores its fingerprint`() =
+        runTest {
+            val output =
+                PublishedOutput(
+                    mediaId = MediaId(77),
+                    uri = "content://media/external/images/media/77",
+                    relativePath = "DCIM/Camera/",
+                    displayName = "IMG_2.heic",
+                    size = ByteSize.megabytes(2),
+                    dateModified = Instant.ofEpochSecond(1_700_000_100),
+                    format = MediaFormat.HEIC,
+                )
+
+            repository.recordConvertedFile(output, MediaFormat.JPEG)
+
+            val stored = database.convertedFileDao().findByMediaId(77)!!
+            assertThat(stored.displayName).isEqualTo("IMG_2.heic")
+            assertThat(stored.sizeBytes).isEqualTo(2_000_000)
+            assertThat(stored.dateModifiedMillis).isEqualTo(1_700_000_100_000)
+            assertThat(stored.sourceFormat).isEqualTo("JPEG")
+            assertThat(stored.targetFormat).isEqualTo("HEIC")
         }
 
     @Test

@@ -6,6 +6,7 @@ import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsEvent
 import io.github.gokulhk.spacesaver.core.model.ByteSize
+import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import io.github.gokulhk.spacesaver.core.model.MediaItem
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -90,4 +91,30 @@ interface BatchRepository {
 
     /** Applies a review outcome atomically, including its savings events. */
     suspend fun applyReview(update: ReviewUpdate)
+
+    /** Sets a batch's status. */
+    suspend fun updateBatchStatus(
+        id: BatchId,
+        status: BatchStatus,
+    )
+
+    /** Sets an item's status and, once converted, its output. */
+    suspend fun updateItem(
+        id: BatchItemId,
+        status: ItemStatus,
+        outputUri: String? = null,
+        outputSize: ByteSize? = null,
+    )
+
+    /** Batches that were planned or converting, e.g. when the process died mid-batch. */
+    suspend fun unfinishedBatches(): List<Batch>
+
+    /** Every output URI recorded on any batch item, for orphan cleanup. */
+    suspend fun referencedOutputUris(): Set<String>
+
+    /** Records a published output so it is never suggested for conversion again (plan Section 5.8 step 6). */
+    suspend fun recordConvertedFile(
+        output: PublishedOutput,
+        sourceFormat: MediaFormat,
+    )
 }

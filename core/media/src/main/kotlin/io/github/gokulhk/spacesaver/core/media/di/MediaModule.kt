@@ -9,10 +9,12 @@ import dagger.multibindings.IntoSet
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConverterRegistry
 import io.github.gokulhk.spacesaver.core.domain.conversion.MediaConverter
 import io.github.gokulhk.spacesaver.core.domain.repository.EncoderCapabilities
+import io.github.gokulhk.spacesaver.core.domain.repository.OutputGateway
 import io.github.gokulhk.spacesaver.core.media.DefaultConverterRegistry
 import io.github.gokulhk.spacesaver.core.media.capabilities.AndroidEncoderCapabilities
 import io.github.gokulhk.spacesaver.core.media.image.HeicImageConverter
 import io.github.gokulhk.spacesaver.core.media.image.WebpImageConverter
+import io.github.gokulhk.spacesaver.core.media.output.AndroidOutputGateway
 import io.github.gokulhk.spacesaver.core.media.video.Media3VideoConverter
 
 /** Binds the media engine. New formats are added by binding another converter `@IntoSet`. */
@@ -23,6 +25,10 @@ interface MediaModule {
     /** Encoder capability detection. */
     @Binds
     fun encoderCapabilities(impl: AndroidEncoderCapabilities): EncoderCapabilities
+
+    /** Output verification and publishing. */
+    @Binds
+    fun outputGateway(impl: AndroidOutputGateway): OutputGateway
 
     /** Converter lookup. */
     @Binds

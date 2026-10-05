@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="batch_channel_name">Batch progress</string>
+    <string name="batch_channel_description">Shows progress while SpaceSaver converts a batch.</string>
+    <string name="batch_notification_title">Saving space…</string>
+    <string name="batch_notification_starting">Getting ready</string>
+    <!-- %1$d = files finished, %2$d = files in the batch, %3$s = file being converted. -->
+    <string name="batch_notification_progress">%1$d of %2$d · %3$s</string>
+</resources>

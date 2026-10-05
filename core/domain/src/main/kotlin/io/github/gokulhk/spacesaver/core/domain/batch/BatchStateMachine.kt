@@ -73,6 +73,7 @@ class BatchStateMachine
                     (ItemStatus.CONVERTING to ItemEvent.CONVERSION_FAILED) to ItemStatus.FAILED,
                     (ItemStatus.CONVERTING to ItemEvent.SKIPPED_NO_SPACE) to ItemStatus.SKIPPED_NO_SPACE,
                     (ItemStatus.CONVERTING to ItemEvent.CANCEL) to ItemStatus.CANCELLED,
+                    (ItemStatus.CONVERTING to ItemEvent.RESET) to ItemStatus.QUEUED,
                     (ItemStatus.CONVERTED to ItemEvent.ACCEPT) to ItemStatus.ACCEPTED,
                     (ItemStatus.CONVERTED to ItemEvent.REJECT) to ItemStatus.REJECTED,
                     (ItemStatus.ACCEPTED to ItemEvent.REJECT) to ItemStatus.REJECTED,

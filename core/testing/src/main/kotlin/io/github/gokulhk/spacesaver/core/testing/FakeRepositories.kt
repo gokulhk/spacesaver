@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.estimate.ProcessingSpeed
 import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationRepository
+import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationSample
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaSort
 import io.github.gokulhk.spacesaver.core.domain.repository.SavingsRepository
@@ -71,6 +72,17 @@ class FakeStorageRepository(
     fun setStats(stats: StorageStats) {
         state.value = stats
     }
+
+    /** Changes only the free space, e.g. while a conversion fills the disk. */
+    fun setFree(free: ByteSize) {
+        state.update { it.copy(free = free) }
+    }
+
+    /** How many times [freeSpace] was polled. */
+    var freeSpaceQueries = 0
+        private set
+
+    override suspend fun freeSpace(): ByteSize = state.value.free.also { freeSpaceQueries++ }
 
     override fun observeStorage(): Flow<StorageStats> = state
 
@@ -144,4 +156,11 @@ class FakeCalibrationRepository(
     override fun observeCalibration(): Flow<CalibrationTable> = calibration
 
     override fun observeProcessingSpeed(): Flow<ProcessingSpeed> = speed
+
+    /** Every recorded sample, in order. */
+    val samples = mutableListOf<CalibrationSample>()
+
+    override suspend fun record(sample: CalibrationSample) {
+        samples += sample
+    }
 }

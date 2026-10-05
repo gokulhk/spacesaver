@@ -48,5 +48,10 @@ class StorageRepositoryImpl
                 )
             }
 
+        override suspend fun freeSpace(): ByteSize =
+            withContext(ioDispatcher) {
+                ByteSize(stats.freeBytes().coerceIn(0, stats.totalBytes().coerceAtLeast(0)))
+            }
+
         override suspend fun refresh() = refreshes.update { it + 1 }
     }

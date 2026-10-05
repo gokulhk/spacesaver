@@ -7,7 +7,9 @@ import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.estimate.ConversionPair
 import io.github.gokulhk.spacesaver.core.domain.estimate.ProcessingSpeed
 import io.github.gokulhk.spacesaver.core.domain.estimate.RatioCalibrator
+import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationSample
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
+import io.github.gokulhk.spacesaver.core.testing.TestClock
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -18,7 +20,7 @@ import org.junit.runner.RunWith
 class CalibrationRepositoryImplTest {
     private val database = inMemoryDatabase()
     private val dao = database.calibrationDao()
-    private val repository = CalibrationRepositoryImpl(dao, RatioCalibrator())
+    private val repository = CalibrationRepositoryImpl(dao, RatioCalibrator(), TestClock())
 
     @After
     fun close() = database.close()
@@ -61,6 +63,29 @@ class CalibrationRepositoryImplTest {
 
             assertThat(speed.videoSecondsPerFootageSecond).isWithin(1e-9).of(0.5)
             assertThat(speed.secondsPerImage).isWithin(1e-9).of(1.2)
+        }
+
+    @Test
+    fun `recorded samples feed calibration`() =
+        runTest {
+            val pair = ConversionPair(MediaFormat.JPEG, MediaFormat.HEIC)
+            listOf(0.40, 0.42, 0.44).forEach { repository.record(CalibrationSample.Ratio(pair, it)) }
+            listOf(1.0, 1.1, 1.2).forEach { repository.record(CalibrationSample.ImageSpeed(it)) }
+            listOf(0.8, 0.9, 1.0).forEach { repository.record(CalibrationSample.VideoSpeed(it)) }
+
+            assertThat(repository.observeCalibration().first().ratioFor(pair)).isWithin(1e-9).of(0.42)
+            val speed = repository.observeProcessingSpeed().first()
+            assertThat(speed.secondsPerImage).isWithin(1e-9).of(1.1)
+            assertThat(speed.videoSecondsPerFootageSecond).isWithin(1e-9).of(0.9)
+        }
+
+    @Test
+    fun `only the newest samples per key are kept`() =
+        runTest {
+            val pair = ConversionPair(MediaFormat.JPEG, MediaFormat.HEIC)
+            repeat(30) { repository.record(CalibrationSample.Ratio(pair, 0.5)) }
+
+            assertThat(dao.observeAll().first()).hasSize(CalibrationRepositoryImpl.SAMPLES_PER_KEY)
         }
 
     private fun ratio(

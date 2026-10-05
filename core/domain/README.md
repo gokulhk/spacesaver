@@ -10,9 +10,10 @@ The business rules from plan Section 5, the ports (interfaces) the data layer im
 | `estimate` | `VideoSavingsEstimator`, `ImageSavingsEstimator`, `RatioCalibrator`, `CompressionRatios`, `CalibrationTable`, `ProcessingSpeed` |
 | `plan` | `BatchPlanner`, `BatchPlanConfig`, `ReservePolicy`, `PlanSimulator`, `ConversionPlan`, `StorageBudget` |
 | `batch` | `BatchStateMachine`, statuses and events, `ReviewOptions` |
+| `execution` | `BatchRunner`, `ConvertBatchItem`, `SpaceGuard`, `FreeSpaceMonitor`, `ConversionRecorder`, `CancelBatch`, `ReconcileBatches` |
 | `savings` | `SavingsCalculator`, `SavingsEvent`, `SavingsSummary` |
 | `conversion` | `MediaConverter`, `ConverterRegistry`, `ConversionSpec`, `ConversionOption`, `AudioPolicy`, `TargetSelection` |
-| `repository` | Ports: media, storage, savings, batches, settings, deletion, encoder capabilities, calibration, scheduler, zone |
+| `repository` | Ports: media, storage, savings, batches, settings, deletion, encoder capabilities, calibration, scheduler, outputs, zone |
 | `usecase` | One class per action, invoked with `operator fun invoke` |
 | `result` | `DomainResult`, `DomainError` |
 

@@ -1,12 +1,19 @@
 package io.github.gokulhk.spacesaver
 
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.work.Configuration
+import androidx.work.testing.SynchronousExecutor
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.google.common.truth.Truth.assertThat
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpecResolver
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConverterRegistry
+import io.github.gokulhk.spacesaver.core.domain.execution.BatchRunner
+import io.github.gokulhk.spacesaver.core.domain.execution.CancelBatch
+import io.github.gokulhk.spacesaver.core.domain.execution.ReconcileBatches
 import io.github.gokulhk.spacesaver.core.domain.repository.SettingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.UserSettings
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
@@ -15,6 +22,7 @@ import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveMediaBySize
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveStorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSuggestions
+import io.github.gokulhk.spacesaver.core.domain.usecase.StartNextBatch
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -27,8 +35,8 @@ import javax.inject.Inject
 
 /**
  * Builds the real Hilt graph, so a missing binding fails the build, and checks that data-backed
- * use cases work end to end on Room and DataStore. Use cases needing later phases' ports
- * (deletion, scheduling) join this test as those ports get implementations.
+ * use cases work end to end on Room and DataStore. Use cases needing the deletion port (Phase 6)
+ * join this test when it gets an implementation.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -53,8 +61,32 @@ class DependencyGraphTest {
 
     @Inject lateinit var conversionSpecResolver: ConversionSpecResolver
 
+    @Inject lateinit var batchRunner: BatchRunner
+
+    @Inject lateinit var startNextBatch: StartNextBatch
+
+    @Inject lateinit var cancelBatch: CancelBatch
+
+    @Inject lateinit var reconcileBatches: ReconcileBatches
+
     @Before
-    fun inject() = hilt.inject()
+    fun inject() {
+        // The real app configures WorkManager in SpaceSaverApplication; tests use the test WorkManager.
+        WorkManagerTestInitHelper.initializeTestWorkManager(
+            ApplicationProvider.getApplicationContext(),
+            Configuration.Builder().setExecutor(SynchronousExecutor()).build(),
+        )
+        hilt.inject()
+    }
+
+    @Test
+    fun `reconciling a fresh install finds nothing to do`() =
+        runTest {
+            val report = reconcileBatches()
+
+            assertThat(report.resumed).isEmpty()
+            assertThat(report.awaitingReview).isEmpty()
+        }
 
     @Test
     fun `savings summary starts at zero on a fresh install`() =

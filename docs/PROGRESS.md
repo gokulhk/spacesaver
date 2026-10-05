@@ -107,10 +107,15 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
 
 ## Phase 5 — Batch execution
 
-- [ ] 5.1 Batch runner
-- [ ] 5.2 Free-space monitor
-- [ ] 5.3 WorkManager worker and foreground notification ⚠️ SPIKE
-- [ ] 5.4 Resume and orphan cleanup
+- [x] **5.1 Batch runner**: `BatchRunner` (state machine, sequential items, resumable) + `ConvertBatchItem` (resolve spec, find converter, convert under `SpaceGuard`, verify, publish, record) + `ConversionRecorder` (converted-file record, calibration samples) + `CancelBatch`.
+  - Note: built after 5.2, since the runner's out-of-space test needs the monitor.
+  - Note: **interruption is not cancellation.** When WorkManager stops the worker (charger unplugged, system limits) or the process dies, the batch stays resumable: the interrupted item is reset and redone on the next run. The user's Cancel is the separate `CancelBatch` use case, which marks the remaining items and the batch `CANCELLED`. (A first version treated every cancellation as the user's; designing the worker exposed the problem.)
+  - New ports: `OutputGateway` (implemented by `AndroidOutputGateway`), `StorageRepository.freeSpace()`, batch item updates, `CalibrationRepository.record`, `BatchScheduler.isScheduled/cancel`; item event `RESET`.
+- [x] **5.2 Free-space monitor**: `FreeSpaceMonitor` polls every 2 s; `SpaceGuard` refuses to start an item whose cost doesn't fit above the reserve, and cancels it if free space drops below the reserve mid-conversion (`SKIPPED_NO_SPACE`).
+- [x] **5.3 WorkManager worker ⚠️ SPIKE**: `BatchWorker` (`@HiltWorker`, foreground, conflated progress updates), `BatchNotifications`, `WorkManagerBatchScheduler` (unique work per batch; expedited, or charging constraint), manifest permissions. Findings: `docs/spikes/foreground-work.md` (`mediaProcessing` on API 35+, `dataSync` before).
+- [x] **5.4 Resume and orphan cleanup**: `ReconcileBatches` runs on app start: re-schedules interrupted batches without work, deletes this app's pending outputs no item references (only while nothing runs), reports batches awaiting review.
+  - `SpaceSaverApplication` provides WorkManager's configuration (Hilt worker factory; default initializer removed) and launches reconcile in an application scope.
+  - Tests: 22 domain tests for the runner, monitor, cancel and reconcile; 10 Robolectric tests in `:core:work`; new data and database tests; 3 new instrumented gateway tests (30/30 on the emulator); `DependencyGraphTest` builds the full graph and runs reconcile.
 
 ## Phase 6 — Deletion and savings ledger
 

@@ -45,10 +45,10 @@ abstract class BatchDao {
         status: String,
     )
 
-    /** Sets an item's status and, once converted, its output. */
+    /** Sets an item's status, and its output when given; a null output keeps the recorded one. */
     @Query(
-        "UPDATE batch_items SET status = :status, output_uri = :outputUri, " +
-            "output_size_bytes = :outputSizeBytes WHERE id = :id",
+        "UPDATE batch_items SET status = :status, output_uri = COALESCE(:outputUri, output_uri), " +
+            "output_size_bytes = COALESCE(:outputSizeBytes, output_size_bytes) WHERE id = :id",
     )
     abstract suspend fun updateItem(
         id: Long,
@@ -57,16 +57,14 @@ abstract class BatchDao {
         outputSizeBytes: Long?,
     )
 
-    /** Sets an item's status, keeping its output. */
-    @Query("UPDATE batch_items SET status = :status WHERE id = :id")
-    abstract suspend fun updateItemStatus(
-        id: Long,
-        status: String,
-    )
+    /** Batches in any of [statuses], oldest first. */
+    @Transaction
+    @Query("SELECT * FROM batches WHERE status IN (:statuses) ORDER BY created_at_millis, id")
+    abstract suspend fun getBatchesWithStatuses(statuses: List<String>): List<BatchWithItems>
 
-    /** Deletes a batch and, by cascade, its items. */
-    @Query("DELETE FROM batches WHERE id = :id")
-    abstract suspend fun deleteBatch(id: Long)
+    /** Every recorded output URI. */
+    @Query("SELECT output_uri FROM batch_items WHERE output_uri IS NOT NULL")
+    abstract suspend fun outputUris(): List<String>
 
     @Insert
     protected abstract suspend fun insertBatch(batch: BatchEntity): Long

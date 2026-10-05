@@ -26,6 +26,9 @@ interface StorageRepository {
     /** Current figures, read fresh (planning must not use stale free space). */
     suspend fun currentStorage(): StorageStats
 
+    /** Current free space only; cheap enough to poll every few seconds during conversion. */
+    suspend fun freeSpace(): ByteSize
+
     /** Re-reads the figures, e.g. after a batch or a deletion. */
     suspend fun refresh()
 }

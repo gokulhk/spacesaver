@@ -10,11 +10,20 @@ import io.github.gokulhk.spacesaver.core.domain.repository.ZoneProvider
 import io.github.gokulhk.spacesaver.core.model.AppDispatchers
 import io.github.gokulhk.spacesaver.core.model.Dispatcher
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.time.Clock
 import java.time.ZoneId
+import javax.inject.Qualifier
+import javax.inject.Singleton
 
-/** App-wide bindings: time, dispatchers, and the domain's tuning constants. */
+/** Qualifies the process-wide [CoroutineScope] for work that must outlive any screen. */
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ApplicationScope
+
+/** App-wide bindings: time, dispatchers, scope, and the domain's tuning constants. */
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -35,6 +44,14 @@ object AppModule {
     @Provides
     @Dispatcher(AppDispatchers.DEFAULT)
     fun defaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    /** Process-wide scope; a failing child doesn't cancel the others. */
+    @Provides
+    @Singleton
+    @ApplicationScope
+    fun applicationScope(
+        @Dispatcher(AppDispatchers.DEFAULT) dispatcher: CoroutineDispatcher,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     /** Batch planning parameters (plan Section 5.5). */
     @Provides

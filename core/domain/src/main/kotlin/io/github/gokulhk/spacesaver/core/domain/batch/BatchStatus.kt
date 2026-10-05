@@ -127,4 +127,7 @@ enum class ItemEvent {
 
     /** The rejected output was deleted. */
     OUTPUT_DISCARDED,
+
+    /** The process died mid-conversion; the item goes back to the queue to be converted again. */
+    RESET,
 }

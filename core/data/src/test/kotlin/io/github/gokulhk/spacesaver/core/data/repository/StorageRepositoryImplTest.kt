@@ -49,6 +49,14 @@ class StorageRepositoryImplTest {
         }
 
     @Test
+    fun `free space alone is read cheaply`() =
+        runTest {
+            stats.freeBytes = 12_345
+
+            assertThat(repository().freeSpace()).isEqualTo(ByteSize(12_345))
+        }
+
+    @Test
     fun `free space above total is clamped`() =
         runTest {
             stats.freeBytes = stats.totalBytes + 1
