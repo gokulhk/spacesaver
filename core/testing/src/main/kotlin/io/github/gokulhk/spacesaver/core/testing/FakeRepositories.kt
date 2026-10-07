@@ -7,6 +7,7 @@ import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationSample
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaSort
+import io.github.gokulhk.spacesaver.core.domain.repository.PlanAdditionsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.SavingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.SettingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.StorageRepository
@@ -16,6 +17,7 @@ import io.github.gokulhk.spacesaver.core.domain.savings.SavingsEvent
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.ImageFormatPreference
+import io.github.gokulhk.spacesaver.core.model.MediaId
 import io.github.gokulhk.spacesaver.core.model.MediaItem
 import io.github.gokulhk.spacesaver.core.model.MediaType
 import io.github.gokulhk.spacesaver.core.model.ThemeMode
@@ -140,6 +142,8 @@ class FakeSettingsRepository(
     override suspend fun setReserveOverride(reserve: ByteSize?) = state.update { it.copy(reserveOverride = reserve) }
 
     override suspend fun setChargingOnly(enabled: Boolean) = state.update { it.copy(chargingOnly = enabled) }
+
+    override suspend fun markMediaAccessRequested() = state.update { it.copy(mediaAccessRequested = true) }
 }
 
 /** In-memory calibration data. */
@@ -163,4 +167,13 @@ class FakeCalibrationRepository(
     override suspend fun record(sample: CalibrationSample) {
         samples += sample
     }
+}
+
+/** In-memory plan additions. */
+class FakePlanAdditionsRepository : PlanAdditionsRepository {
+    private val state = MutableStateFlow(emptySet<MediaId>())
+
+    override val additions: Flow<Set<MediaId>> = state
+
+    override suspend fun add(ids: Set<MediaId>) = state.update { it + ids }
 }

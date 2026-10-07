@@ -54,10 +54,8 @@ class BatchRepositoryImpl
 
         override fun observe(id: BatchId): Flow<Batch?> = batchDao.observeBatch(id.value).map { it?.toDomain() }
 
-        override fun observeAwaitingReview(): Flow<List<Batch>> =
-            batchDao.observeBatchesWithStatus(BatchStatus.AWAITING_REVIEW.name).map { batches ->
-                batches.map { it.toDomain() }
-            }
+        override fun observeActiveBatches(): Flow<List<Batch>> =
+            batchDao.observeBatchesWithStatuses(ACTIVE_STATUSES).map { batches -> batches.map { it.toDomain() } }
 
         override suspend fun applyReview(update: ReviewUpdate) =
             database.withTransaction {
@@ -103,5 +101,8 @@ class BatchRepositoryImpl
 
         private companion object {
             val UNFINISHED = listOf(BatchStatus.PLANNED, BatchStatus.CONVERTING)
+
+            /** Statuses of batches that haven't finished. */
+            val ACTIVE_STATUSES = BatchStatus.entries.filter { it.isActive }.map { it.name }
         }
     }

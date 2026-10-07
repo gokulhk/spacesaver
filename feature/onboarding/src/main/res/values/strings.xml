@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_title">Find what\'s filling your phone</string>
+    <string name="onboarding_message">SpaceSaver looks at your photos and videos to find ones that can be made smaller, then shrinks them on your phone.</string>
+    <string name="onboarding_message_denied">Without access to photos and videos, SpaceSaver can\'t find anything to compress.</string>
+    <string name="onboarding_message_permanently_denied">Access to photos and videos is turned off. Turn on \"Photos and videos\" in SpaceSaver\'s settings to continue.</string>
+    <string name="onboarding_point_offline">Works fully offline: no internet permission</string>
+    <string name="onboarding_point_review">Nothing is deleted without your OK</string>
+    <string name="onboarding_point_on_device">Compression happens on your phone</string>
+    <string name="onboarding_allow_access">Allow access</string>
+    <string name="onboarding_open_settings">Open settings</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_allow_full_access">Allow full access</string>
+    <string name="onboarding_limited_banner">SpaceSaver can only see selected photos. Allow full access to find more savings.</string>
+    <string name="onboarding_loading">Checking permissions</string>
+</resources>

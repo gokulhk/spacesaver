@@ -26,7 +26,7 @@ import io.github.gokulhk.spacesaver.core.designsystem.theme.Spacing
  *
  * @param headline e.g. "Save ~18 GB".
  * @param supportingText e.g. "~6 batches · about 45 min".
- * @param batches previews shown when [expanded].
+ * @param batches previews shown when [expanded]; with none, the expand toggle is hidden.
  * @param expanded whether the batch list is visible.
  * @param onExpandedChange called with the requested expanded state.
  * @param actionLabel e.g. "Start batch 1".
@@ -61,8 +61,10 @@ fun PlanSummaryCard(
                 )
             }
             if (blockedMessage != null) BlockedNotice(message = blockedMessage)
-            ExpandToggle(expanded = expanded, onExpandedChange = onExpandedChange)
-            if (expanded) BatchList(batches = batches)
+            if (batches.isNotEmpty()) {
+                ExpandToggle(expanded = expanded, onExpandedChange = onExpandedChange)
+                if (expanded) BatchList(batches = batches)
+            }
             PrimaryActionButton(
                 text = actionLabel,
                 onClick = onAction,

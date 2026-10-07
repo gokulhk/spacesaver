@@ -63,16 +63,18 @@ class BatchDaoTest {
         }
 
     @Test
-    fun `observing by status follows changes`() =
+    fun `observing by statuses follows changes`() =
         runTest {
             val id = dao.insertBatchWithItems(BatchEntity(status = "CONVERTING", createdAtMillis = 0), listOf(item(0)))
 
-            dao.observeBatchesWithStatus("AWAITING_REVIEW").test {
+            dao.observeBatchesWithStatuses(listOf("AWAITING_REVIEW", "FINALIZING")).test {
                 assertThat(awaitItem()).isEmpty()
 
                 dao.updateBatchStatus(id, "AWAITING_REVIEW")
-
                 assertThat(awaitItem().map { it.batch.id }).containsExactly(id)
+
+                dao.updateBatchStatus(id, "COMPLETED")
+                assertThat(awaitItem()).isEmpty()
             }
         }
 

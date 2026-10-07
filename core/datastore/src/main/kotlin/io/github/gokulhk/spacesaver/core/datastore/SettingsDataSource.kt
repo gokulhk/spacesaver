@@ -63,6 +63,11 @@ class SettingsDataSource
             dataStore.edit { it[CHARGING_ONLY] = enabled }
         }
 
+        /** Records that the media permission dialog has been shown. */
+        suspend fun setMediaAccessRequested() {
+            dataStore.edit { it[MEDIA_ACCESS_REQUESTED] = true }
+        }
+
         private fun toSettings(prefs: Preferences): StoredSettings {
             val defaults = StoredSettings.DEFAULT
             return StoredSettings(
@@ -70,6 +75,7 @@ class SettingsDataSource
                 imageFormat = enumOrNull<ImageFormatPreference>(prefs[IMAGE_FORMAT]) ?: defaults.imageFormat,
                 reserve = prefs[RESERVE_BYTES]?.takeIf { it > 0 }?.let(::ByteSize),
                 chargingOnly = prefs[CHARGING_ONLY] ?: defaults.chargingOnly,
+                mediaAccessRequested = prefs[MEDIA_ACCESS_REQUESTED] ?: defaults.mediaAccessRequested,
             )
         }
 
@@ -84,6 +90,7 @@ class SettingsDataSource
             val IMAGE_FORMAT = stringPreferencesKey("image_format")
             val RESERVE_BYTES = longPreferencesKey("reserve_bytes")
             val CHARGING_ONLY = booleanPreferencesKey("charging_only")
+            val MEDIA_ACCESS_REQUESTED = booleanPreferencesKey("media_access_requested")
         }
     }
 

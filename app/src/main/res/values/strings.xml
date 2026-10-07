@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">SpaceSaver</string>
-    <string name="bootstrap_placeholder">SpaceSaver is getting ready.</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_browse">Browse</string>
 </resources>

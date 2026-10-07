@@ -102,4 +102,18 @@ class ByteSizeTest {
     fun `formatting uses the locale's decimal separator`() {
         assertThat(ByteSize(1_500_000).format(Locale.GERMANY)).isEqualTo("1,5 MB")
     }
+
+    @Test
+    fun `formatted parts expose the number and unit separately`() {
+        assertThat(ByteSize(12_400_000_000).formatParts()).isEqualTo(FormattedSize("12.4", SizeUnit.GIGABYTES))
+        assertThat(ByteSize(512_000).formatParts()).isEqualTo(FormattedSize("512", SizeUnit.KILOBYTES))
+        assertThat(ByteSize(999).formatParts()).isEqualTo(FormattedSize("999", SizeUnit.BYTES))
+        assertThat(ByteSize(999_500).formatParts()).isEqualTo(FormattedSize("1.0", SizeUnit.MEGABYTES))
+        assertThat(ByteSize(1_500_000).formatParts(Locale.GERMANY)).isEqualTo(FormattedSize("1,5", SizeUnit.MEGABYTES))
+    }
+
+    @Test
+    fun `units carry their SI symbols`() {
+        assertThat(SizeUnit.entries.map { it.symbol }).containsExactly("B", "KB", "MB", "GB", "TB").inOrder()
+    }
 }

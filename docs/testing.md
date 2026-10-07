@@ -10,11 +10,17 @@
 
 ## Screenshot tests
 
-- Each component screenshot stacks the **light theme above the dark theme** in one image, so both are reviewed together.
-- Screenshots render at Pixel 5 size (`RobolectricDeviceQualifiers.Pixel5`) with Robolectric's native graphics.
+- Each screenshot stacks the **light theme above the dark theme** in one image, so both are reviewed together.
+- The helpers live in `:core:screenshot-testing` (added to every module with the Roborazzi convention, which all feature modules apply):
+  - `captureComponentLightDark(name) { ... }` for components: wrap-content height, padded on the theme background.
+  - `captureScreenLightDark(name) { ... }` for whole screens: each theme in a fixed 360×780 dp frame, so `fillMaxSize` layouts render as on a phone. The test class needs `@Config(qualifiers = STACKED_SCREENS_QUALIFIERS)` so both frames fit.
+- Component screenshots render at Pixel 5 size (`RobolectricDeviceQualifiers.Pixel5`) with Robolectric's native graphics.
+- Bottom sheets and dialogs are separate windows; capture their content composable on its own (e.g. `PresetOptions`).
 - Comparison tolerates up to 1% changed pixels to absorb anti-aliasing differences between machines. A real UI change exceeds that.
 - When verification fails, the diff images are in `<module>/build/outputs/roborazzi/` (CI uploads them in the `reports` artifact).
 - Wrap screenshot content in a `Surface`, as real screens are, so text picks up the theme's content color.
+
+ViewModel tests create the ViewModel lazily (`by lazy`), because `viewModelScope` captures `Dispatchers.Main` when first used, and JUnit initializes fields before `MainDispatcherRule` swaps it in.
 
 Why not a parameterized light/dark run: Robolectric's `ParameterizedRobolectricTestRunner` produced blank captures for every test after the parameter switch, so the light/dark pair is rendered in a single capture instead.
 

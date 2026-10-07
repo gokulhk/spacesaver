@@ -128,9 +128,31 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
 
 ## Phase 7 — Feature UI
 
-- [ ] 7.1 Onboarding/permissions
-- [ ] 7.2 Home
-- [ ] 7.3 Browse
+- [x] Groundwork
+  - `:core:ui`: `SizeTextFormatter` (SI display, spoken words via plurals, approximate "~"/"about"), `DurationTextFormatter` ("about 2 h 10 min"), `ErrorMessageMapper` (every `DomainError`), `WhileUiSubscribed`.
+  - `ByteSize.formatParts` exposes the number and unit separately for spoken phrases.
+  - New `:core:screenshot-testing` with light/dark component and screen capture; the design system migrated to it (baselines unchanged).
+  - Domain: `ObservePendingReviews`; settings remember whether media access was ever requested (`mediaAccessRequested`).
+- [x] 7.1 Onboarding/permissions
+  - `MediaAccess` (full, limited, not requested, denied, permanently denied) resolved by a pure, table-tested function; `MediaPermissions` per API level (≤32 storage, 33 granular + notifications, 34+ user-selected).
+  - "Permanently denied" = denied after a request with no rationale; the request is remembered in DataStore so it survives process death.
+  - Screen re-reads permissions on every resume (the user may change them in system settings); full access continues automatically, limited access shows the banner and waits for "Continue".
+  - Media permissions declared in `:feature:onboarding`'s manifest.
+  - Verified on the emulator: notification and media dialogs, "Allow all", then home.
+- [x] 7.2 Home
+  - Banner, storage bar, pending-review cards, plan card (ready / blocked with "Free up X" / empty), suggestion cards with switches and the preset bottom sheet with quality notes.
+  - The plan is rebuilt when included candidates or free space change; "Start batch 1" calls `StartNextBatch` and reports the batch or an error (snackbar).
+  - Verified on the emulator with fixture media (two 4K videos, three JPEGs): preset change from 4K→Full HD to 4K→HD raised the plan from ~54.1 MB to ~64.7 MB.
+  - The notification permission is asked for when a batch starts (not on onboarding); the batch starts whatever the answer.
+  - Minimal navigation in `MainActivity`: onboarding until media can be read, then home. Starting a batch and opening a review stay on home until 7.5, 7.6 and 7.8.
+- [x] 7.3 Browse
+  - Videos/Images tabs with the category total, "Largest first"/"Newest first", and a paged list with system thumbnails (`MediaThumbnail`, MediaStore's cache; no image library).
+  - Long press starts multi-select; taps toggle while selecting; back or ✕ clears. The bottom bar offers Convert and Delete.
+  - Delete: in-app confirmation with the space freed, then the system dialog; approved deletions are recorded as DELETION savings and the list reloads (MediaStore doesn't notify the pager). A declined system dialog keeps the selection.
+  - Convert: `AddToPlan` adds eligible files to the plan (in-memory `PlanAdditionsRepository`), and they stay in Home's plan even when their suggestion is switched off; ineligible files are reported.
+  - Fix (found on the emulator): files in an unfinished batch were suggested again, so a second batch re-converted them while the first awaited review. Suggestions now leave out every file in an active batch (`BatchRepository.observeActiveBatches`, which also replaces `observeAwaitingReview`). Eligibility routing moved into `MediaEligibility`.
+  - Minimal Home/Browse bottom bar in `SpaceSaverApp` until 7.8.
+  - Verified on the emulator: thumbnails, tabs, delete via system dialog (list, total, and snackbar update), Convert with the JPEG suggestion off (plan ~52.8 → ~53.2 MB), and the notification prompt on "Start batch 1" with the permission revoked.
 - [ ] 7.4 Plan detail
 - [ ] 7.5 Batch progress
 - [ ] 7.6 Batch review
@@ -139,6 +161,7 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
 
 ## Phase 8 — Hardening
 
+- [ ] 8.0 Test hygiene: instrumented tests leave empty `DCIM/SpaceSaverTest*` folders on the device (200+ on the test AVD); clean them up in teardown and delete the existing ones
 - [ ] 8.1 Performance
 - [ ] 8.2 Privacy guard
 - [ ] 8.3 Accessibility pass

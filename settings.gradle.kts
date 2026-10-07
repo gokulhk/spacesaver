@@ -48,6 +48,7 @@ include(":core:work")
 include(":core:designsystem")
 include(":core:ui")
 include(":core:testing")
+include(":core:screenshot-testing")
 
 include(":feature:onboarding")
 include(":feature:home")

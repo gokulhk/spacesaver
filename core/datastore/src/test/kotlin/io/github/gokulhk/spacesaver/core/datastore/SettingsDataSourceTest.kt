@@ -34,7 +34,13 @@ class SettingsDataSourceTest {
             assertThat(SettingsDataSource(dataStore()).settings.first()).isEqualTo(StoredSettings.DEFAULT)
             assertThat(StoredSettings.DEFAULT)
                 .isEqualTo(
-                    StoredSettings(ThemeMode.SYSTEM, ImageFormatPreference.HEIC, reserve = null, chargingOnly = false),
+                    StoredSettings(
+                        ThemeMode.SYSTEM,
+                        ImageFormatPreference.HEIC,
+                        reserve = null,
+                        chargingOnly = false,
+                        mediaAccessRequested = false,
+                    ),
                 )
         }
 
@@ -60,6 +66,9 @@ class SettingsDataSourceTest {
 
                 source.setReserve(null)
                 assertThat(awaitItem().reserve).isNull()
+
+                source.setMediaAccessRequested()
+                assertThat(awaitItem().mediaAccessRequested).isTrue()
             }
         }
 

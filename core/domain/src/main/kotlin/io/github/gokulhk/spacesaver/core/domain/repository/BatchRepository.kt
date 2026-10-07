@@ -86,8 +86,12 @@ interface BatchRepository {
     /** The batch with [id], re-emitted on every change. */
     fun observe(id: BatchId): Flow<Batch?>
 
-    /** Batches waiting for review, for the home screen's "Pending review" card. */
-    fun observeAwaitingReview(): Flow<List<Batch>>
+    /**
+     * Batches that haven't finished (planned, converting, awaiting review, or finalizing), oldest
+     * first. Home shows the ones awaiting review; their files are kept out of suggestions so
+     * nothing is converted twice.
+     */
+    fun observeActiveBatches(): Flow<List<Batch>>
 
     /** Applies a review outcome atomically, including its savings events. */
     suspend fun applyReview(update: ReviewUpdate)

@@ -35,6 +35,8 @@ class SettingsRepositoryImplTest {
                 assertThat(awaitItem().reserveOverride).isEqualTo(ByteSize.gigabytes(3))
                 repository.setChargingOnly(true)
                 assertThat(awaitItem().chargingOnly).isTrue()
+                repository.markMediaAccessRequested()
+                assertThat(awaitItem().mediaAccessRequested).isTrue()
             }
         }
 }

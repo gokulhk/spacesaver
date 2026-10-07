@@ -17,7 +17,9 @@ class SettingsRepositoryImpl
         private val dataSource: SettingsDataSource,
     ) : SettingsRepository {
         override val settings: Flow<UserSettings> =
-            dataSource.settings.map { UserSettings(it.themeMode, it.imageFormat, it.reserve, it.chargingOnly) }
+            dataSource.settings.map {
+                UserSettings(it.themeMode, it.imageFormat, it.reserve, it.chargingOnly, it.mediaAccessRequested)
+            }
 
         override suspend fun setThemeMode(mode: ThemeMode) {
             dataSource.setThemeMode(mode)
@@ -33,5 +35,9 @@ class SettingsRepositoryImpl
 
         override suspend fun setChargingOnly(enabled: Boolean) {
             dataSource.setChargingOnly(enabled)
+        }
+
+        override suspend fun markMediaAccessRequested() {
+            dataSource.setMediaAccessRequested()
         }
     }

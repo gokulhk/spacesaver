@@ -1,5 +1,6 @@
 package io.github.gokulhk.spacesaver.core.domain.execution
 
+import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchScheduler
@@ -48,7 +49,14 @@ class ReconcileBatches
             return ReconcileReport(
                 resumed = idle.map { it.id },
                 orphansDeleted = orphansDeleted,
-                awaitingReview = batchRepository.observeAwaitingReview().first().map { it.id },
+                awaitingReview =
+                    batchRepository
+                        .observeActiveBatches()
+                        .first()
+                        .filter {
+                            it.status ==
+                                BatchStatus.AWAITING_REVIEW
+                        }.map { it.id },
             )
         }
 

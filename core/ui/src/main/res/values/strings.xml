@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spoken sizes. %s is the formatted number, e.g. "12.4". -->
+    <plurals name="size_spoken_bytes">
+        <item quantity="one">%s byte</item>
+        <item quantity="other">%s bytes</item>
+    </plurals>
+    <plurals name="size_spoken_kilobytes">
+        <item quantity="one">%s kilobyte</item>
+        <item quantity="other">%s kilobytes</item>
+    </plurals>
+    <plurals name="size_spoken_megabytes">
+        <item quantity="one">%s megabyte</item>
+        <item quantity="other">%s megabytes</item>
+    </plurals>
+    <plurals name="size_spoken_gigabytes">
+        <item quantity="one">%s gigabyte</item>
+        <item quantity="other">%s gigabytes</item>
+    </plurals>
+    <plurals name="size_spoken_terabytes">
+        <item quantity="one">%s terabyte</item>
+        <item quantity="other">%s terabytes</item>
+    </plurals>
+    <string name="size_display_approx">~%s</string>
+    <string name="size_spoken_approx">about %s</string>
+
+    <string name="duration_under_a_minute">less than a minute</string>
+    <string name="duration_approx_minutes">about %d min</string>
+    <string name="duration_approx_hours">about %d h</string>
+    <string name="duration_approx_hours_minutes">about %1$d h %2$d min</string>
+
+    <string name="error_insufficient_space">Not enough free space. Free up %s and try again.</string>
+    <string name="error_encoder_unavailable">This phone can\'t save %s files.</string>
+    <string name="error_source_unreadable">The original file couldn\'t be read. It may have been moved or deleted.</string>
+    <string name="error_output_verification_failed">The converted file didn\'t pass checks, so the original was kept.</string>
+    <string name="error_nothing_to_convert">There\'s nothing to compress right now.</string>
+    <string name="error_batch_not_found">That batch no longer exists.</string>
+    <string name="error_permission_missing">SpaceSaver needs access to your photos and videos.</string>
+    <string name="error_cancelled">Cancelled.</string>
+    <string name="error_unknown">Something went wrong. Your originals are untouched.</string>
+    <string name="format_jpeg" translatable="false">JPEG</string>
+    <string name="format_png" translatable="false">PNG</string>
+    <string name="format_webp" translatable="false">WebP</string>
+    <string name="format_heic" translatable="false">HEIC</string>
+    <string name="format_avif" translatable="false">AVIF</string>
+    <string name="format_gif" translatable="false">GIF</string>
+    <string name="format_h264" translatable="false">H.264</string>
+    <string name="format_hevc" translatable="false">HEVC</string>
+    <string name="format_video_other">video</string>
+</resources>

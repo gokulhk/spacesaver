@@ -7,6 +7,14 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 import kotlin.math.roundToLong
 
+/** SI step between units (1 KB = 1,000 B). */
+private const val UNIT_STEP = 1_000L
+private const val KILO = UNIT_STEP
+private const val MEGA = KILO * UNIT_STEP
+private const val GIGA = MEGA * UNIT_STEP
+private const val TERA = GIGA * UNIT_STEP
+private val UNIT_STEP_DECIMAL = BigDecimal.valueOf(UNIT_STEP)
+
 /**
  * A non-negative number of bytes. Sizes never travel as raw `Long`s in signatures, which
  * prevents unit mix-ups. Units are SI (1 KB = 1,000 bytes) to match Android's storage screen
@@ -49,49 +57,25 @@ value class ByteSize(
      *
      * @param locale decides the decimal separator; [Locale.ROOT] gives `"1.5 MB"`.
      */
-    fun format(locale: Locale = Locale.ROOT): String {
-        var unitIndex = UNITS.indexOfLast { bytes >= it.factor }.coerceAtLeast(0)
-        var value = UNITS[unitIndex].scale(bytes)
-        if (value >= UNIT_STEP_DECIMAL && unitIndex < UNITS.lastIndex) {
-            unitIndex++
-            value = UNITS[unitIndex].scale(bytes)
+    fun format(locale: Locale = Locale.ROOT): String = formatParts(locale).let { "${it.number} ${it.unit.symbol}" }
+
+    /** The number and unit [format] shows, separately (e.g. to build a spoken phrase). */
+    fun formatParts(locale: Locale = Locale.ROOT): FormattedSize {
+        var unit = SizeUnit.entries.last { bytes >= it.factor || it == SizeUnit.BYTES }
+        var value = unit.scale(bytes)
+        val next = SizeUnit.entries.getOrNull(unit.ordinal + 1)
+        if (value >= UNIT_STEP_DECIMAL && next != null) {
+            unit = next
+            value = unit.scale(bytes)
         }
-        val unit = UNITS[unitIndex]
         val pattern = if (unit.decimals == 0) "0" else "0.0"
-        return DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale)).format(value) + " " + unit.symbol
+        return FormattedSize(DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale)).format(value), unit)
     }
 
     override fun toString(): String = "ByteSize(${format()})"
 
-    /** A display unit: [factor] bytes per unit, shown with [decimals] fraction digits. */
-    private class Unit(
-        val symbol: String,
-        val factor: Long,
-        val decimals: Int,
-    ) {
-        fun scale(bytes: Long): BigDecimal =
-            BigDecimal.valueOf(bytes).divide(BigDecimal.valueOf(factor), decimals, RoundingMode.HALF_UP)
-    }
-
     /** Factories and constants. */
     companion object {
-        /** SI step between units (1 KB = 1,000 B). */
-        private const val UNIT_STEP = 1_000L
-        private val UNIT_STEP_DECIMAL = BigDecimal.valueOf(UNIT_STEP)
-        private const val KILO = UNIT_STEP
-        private const val MEGA = KILO * UNIT_STEP
-        private const val GIGA = MEGA * UNIT_STEP
-        private const val TERA = GIGA * UNIT_STEP
-
-        private val UNITS =
-            listOf(
-                Unit("B", 1, decimals = 0),
-                Unit("KB", KILO, decimals = 0),
-                Unit("MB", MEGA, decimals = 1),
-                Unit("GB", GIGA, decimals = 1),
-                Unit("TB", TERA, decimals = 1),
-            )
-
         /** Zero bytes. */
         val ZERO = ByteSize(0)
 
@@ -108,6 +92,50 @@ value class ByteSize(
         fun terabytes(value: Long): ByteSize = ByteSize(Math.multiplyExact(value, TERA))
     }
 }
+
+/**
+ * Display units for [ByteSize] (SI, ADR-0004).
+ *
+ * @property symbol the abbreviation shown after the number.
+ * @property factor bytes per unit.
+ * @property decimals fraction digits shown: none for B and KB, one from MB up.
+ */
+enum class SizeUnit(
+    val symbol: String,
+    val factor: Long,
+    val decimals: Int,
+) {
+    /** Bytes. */
+    BYTES("B", 1, decimals = 0),
+
+    /** Kilobytes (1,000 bytes). */
+    KILOBYTES("KB", KILO, decimals = 0),
+
+    /** Megabytes (10^6 bytes). */
+    MEGABYTES("MB", MEGA, decimals = 1),
+
+    /** Gigabytes (10^9 bytes). */
+    GIGABYTES("GB", GIGA, decimals = 1),
+
+    /** Terabytes (10^12 bytes). */
+    TERABYTES("TB", TERA, decimals = 1),
+    ;
+
+    /** [bytes] in this unit, rounded half-up to [decimals] places. */
+    internal fun scale(bytes: Long): BigDecimal =
+        BigDecimal.valueOf(bytes).divide(BigDecimal.valueOf(factor), decimals, RoundingMode.HALF_UP)
+}
+
+/**
+ * A size split for display.
+ *
+ * @property number the localized number, e.g. `"12.4"`.
+ * @property unit its unit.
+ */
+data class FormattedSize(
+    val number: String,
+    val unit: SizeUnit,
+)
 
 /** Sum of all sizes; [ByteSize.ZERO] when empty. */
 fun Iterable<ByteSize>.sum(): ByteSize = fold(ByteSize.ZERO) { total, size -> total + size }

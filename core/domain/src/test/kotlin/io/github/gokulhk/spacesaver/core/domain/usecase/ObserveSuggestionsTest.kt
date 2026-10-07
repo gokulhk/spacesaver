@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.eligibility.ImageEligibility
+import io.github.gokulhk.spacesaver.core.domain.eligibility.MediaEligibility
 import io.github.gokulhk.spacesaver.core.domain.eligibility.SavingsThresholds
 import io.github.gokulhk.spacesaver.core.domain.eligibility.VideoEligibility
 import io.github.gokulhk.spacesaver.core.domain.estimate.ImageSavingsEstimator
@@ -15,12 +16,15 @@ import io.github.gokulhk.spacesaver.core.model.ImageFormatPreference
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import io.github.gokulhk.spacesaver.core.model.MediaId
 import io.github.gokulhk.spacesaver.core.model.MediaItem
+import io.github.gokulhk.spacesaver.core.model.MediaType
 import io.github.gokulhk.spacesaver.core.model.VideoPreset
 import io.github.gokulhk.spacesaver.core.model.sumOfSize
+import io.github.gokulhk.spacesaver.core.testing.FakeBatchRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeCalibrationRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeEncoderCapabilities
 import io.github.gokulhk.spacesaver.core.testing.FakeMediaRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeSettingsRepository
+import io.github.gokulhk.spacesaver.core.testing.aCandidate
 import io.github.gokulhk.spacesaver.core.testing.aVideo
 import io.github.gokulhk.spacesaver.core.testing.anImage
 import kotlinx.coroutines.flow.first
@@ -30,6 +34,8 @@ import org.junit.Test
 class ObserveSuggestionsTest {
     private val capabilities = FakeEncoderCapabilities(hardwareHevc = true, heic = true)
 
+    private val batches = FakeBatchRepository()
+
     private fun observe(
         items: List<MediaItem>,
         settings: UserSettings = UserSettings.DEFAULT,
@@ -38,8 +44,12 @@ class ObserveSuggestionsTest {
         settingsRepository = FakeSettingsRepository(settings),
         calibrationRepository = FakeCalibrationRepository(),
         encoderCapabilities = capabilities,
-        videoEligibility = VideoEligibility(VideoSavingsEstimator(), SavingsThresholds.DEFAULT),
-        imageEligibility = ImageEligibility(ImageSavingsEstimator(), SavingsThresholds.DEFAULT),
+        eligibility =
+            MediaEligibility(
+                VideoEligibility(VideoSavingsEstimator(), SavingsThresholds.DEFAULT),
+                ImageEligibility(ImageSavingsEstimator(), SavingsThresholds.DEFAULT),
+            ),
+        batchRepository = batches,
     )
 
     @Test
@@ -59,6 +69,26 @@ class ObserveSuggestionsTest {
                 assertThat(suggestion.candidates).hasSize(3)
                 assertThat(suggestion.totalSavings).isEqualTo(suggestion.candidates.sumOfSize { it.estimatedSavings })
             }
+        }
+
+    @Test
+    fun `files already in an active batch are not suggested again`() =
+        runTest {
+            val videos = (1L..3L).map { aVideo(id = it, height = 2160) }
+            batches.create(
+                listOf(
+                    aCandidate(
+                        id = 2,
+                        original = ByteSize.megabytes(400),
+                        output = ByteSize.megabytes(60),
+                        type = MediaType.VIDEO,
+                    ),
+                ),
+            )
+
+            val suggestion = observe(videos)().first().single()
+
+            assertThat(suggestion.candidates.map { it.item.id }).containsExactly(MediaId(1), MediaId(3))
         }
 
     @Test

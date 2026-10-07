@@ -12,12 +12,15 @@ import kotlinx.coroutines.flow.Flow
  * @property imageFormat preferred format for converted photos.
  * @property reserveOverride the user's free-space reserve, or null for the default.
  * @property chargingOnly whether batches run only while charging.
+ * @property mediaAccessRequested whether the media permission dialog was ever shown (onboarding
+ * uses it to tell "never asked" from "permanently denied").
  */
 data class UserSettings(
     val themeMode: ThemeMode,
     val imageFormat: ImageFormatPreference,
     val reserveOverride: ByteSize?,
     val chargingOnly: Boolean,
+    val mediaAccessRequested: Boolean = false,
 ) {
     /** Defaults. */
     companion object {
@@ -48,4 +51,7 @@ interface SettingsRepository {
 
     /** Sets whether batches run only while charging. */
     suspend fun setChargingOnly(enabled: Boolean)
+
+    /** Records that the media permission dialog has been shown. */
+    suspend fun markMediaAccessRequested()
 }

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browse_title">Browse</string>
+    <string name="browse_tab_videos">Videos</string>
+    <string name="browse_tab_images">Images</string>
+    <string name="browse_total_videos">Videos use %s</string>
+    <string name="browse_total_images">Images use %s</string>
+    <string name="browse_sort_size">Largest first</string>
+    <string name="browse_sort_date">Newest first</string>
+    <string name="browse_loading">Loading files</string>
+
+    <!-- %1$s: resolution, %2$s: duration, e.g. "3840 × 2160 · 02:05". -->
+    <string name="browse_video_detail">%1$s · %2$s</string>
+    <string name="browse_resolution">%1$d × %2$d</string>
+
+    <plurals name="browse_selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="browse_clear_selection">Clear selection</string>
+    <string name="browse_convert">Convert</string>
+    <string name="browse_delete">Delete</string>
+
+    <plurals name="browse_delete_title">
+        <item quantity="one">Delete %d file permanently?</item>
+        <item quantity="other">Delete %d files permanently?</item>
+    </plurals>
+    <string name="browse_delete_message">This frees %s. Deleted files can\'t be recovered.</string>
+    <string name="browse_delete_confirm">Delete permanently</string>
+    <string name="browse_delete_cancel">Cancel</string>
+
+    <!-- %1$d: file count, %2$s: space freed. -->
+    <plurals name="browse_deleted">
+        <item quantity="one">Deleted %1$d file · freed %2$s</item>
+        <item quantity="other">Deleted %1$d files · freed %2$s</item>
+    </plurals>
+    <plurals name="browse_added_to_plan">
+        <item quantity="one">Added %d file to your plan.</item>
+        <item quantity="other">Added %d files to your plan.</item>
+    </plurals>
+    <plurals name="browse_not_eligible">
+        <item quantity="one">%d file can\'t be made smaller.</item>
+        <item quantity="other">%d files can\'t be made smaller.</item>
+    </plurals>
+
+    <string name="browse_empty_videos">No videos found</string>
+    <string name="browse_empty_images">No images found</string>
+    <string name="browse_empty_message">Files on this phone will appear here, largest first.</string>
+    <string name="browse_error_title">Couldn\'t load your files</string>
+    <string name="browse_error_message">Check that SpaceSaver can still access your photos and videos.</string>
+    <string name="browse_retry">Try again</string>
+</resources>

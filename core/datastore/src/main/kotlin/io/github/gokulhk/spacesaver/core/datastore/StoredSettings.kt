@@ -11,12 +11,15 @@ import io.github.gokulhk.spacesaver.core.model.ThemeMode
  * @property imageFormat preferred photo format.
  * @property reserve the user's free-space reserve; null for the default.
  * @property chargingOnly whether batches run only while charging.
+ * @property mediaAccessRequested whether the media permission dialog was ever shown, which tells
+ * "never asked" apart from "permanently denied".
  */
 data class StoredSettings(
     val themeMode: ThemeMode,
     val imageFormat: ImageFormatPreference,
     val reserve: ByteSize?,
     val chargingOnly: Boolean,
+    val mediaAccessRequested: Boolean,
 ) {
     /** Defaults. */
     companion object {
@@ -27,6 +30,7 @@ data class StoredSettings(
                 imageFormat = ImageFormatPreference.HEIC,
                 reserve = null,
                 chargingOnly = false,
+                mediaAccessRequested = false,
             )
     }
 }

@@ -3,6 +3,9 @@ package io.github.gokulhk.spacesaver.core.designsystem.icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Compress
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DoNotDisturbOn
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -75,4 +78,13 @@ object SpaceSaverIcons {
 
     /** The media library, used in empty states. */
     val MediaLibrary: ImageVector = Icons.Rounded.PhotoLibrary
+
+    /** Permanently delete files. */
+    val Delete: ImageVector = Icons.Rounded.Delete
+
+    /** Add files to the plan for conversion. */
+    val Convert: ImageVector = Icons.Rounded.Compress
+
+    /** Close or leave a mode, e.g. selection. */
+    val Close: ImageVector = Icons.Rounded.Close
 }

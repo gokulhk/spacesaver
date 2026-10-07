@@ -124,8 +124,8 @@ class FakeBatchRepository(
 
     override fun observe(id: BatchId): Flow<Batch?> = batches.map { it[id] }
 
-    override fun observeAwaitingReview(): Flow<List<Batch>> =
-        batches.map { all -> all.values.filter { it.status == BatchStatus.AWAITING_REVIEW } }
+    override fun observeActiveBatches(): Flow<List<Batch>> =
+        batches.map { all -> all.values.filter { it.status.isActive }.sortedBy { it.createdAt } }
 
     override suspend fun applyReview(update: ReviewUpdate) {
         appliedReviews += update

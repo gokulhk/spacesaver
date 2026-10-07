@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_loading">Looking at your photos and videos</string>
+
+    <!-- Plan card -->
+    <string name="home_plan_headline">Save %s</string>
+    <plurals name="home_plan_batches">
+        <item quantity="one">%d batch</item>
+        <item quantity="other">%d batches</item>
+    </plurals>
+    <!-- %1$s: e.g. "6 batches", %2$s: e.g. "about 45 min". -->
+    <string name="home_plan_supporting">%1$s · %2$s</string>
+    <string name="home_plan_batch_title">Batch %d</string>
+    <plurals name="home_plan_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <!-- %1$s: e.g. "25 items", %2$s: savings, %3$s: space needed. -->
+    <string name="home_plan_batch_detail">%1$s · saves %2$s · needs %3$s free</string>
+    <string name="home_start_batch">Start batch %d</string>
+    <string name="home_plan_blocked">Free up %s to start. Deleting large files in Browse helps.</string>
+    <plurals name="home_plan_blocked_items">
+        <item quantity="one">%d item needs more free space</item>
+        <item quantity="other">%d items need more free space</item>
+    </plurals>
+    <string name="home_empty_title">Nothing to compress right now</string>
+    <string name="home_empty_message">Photos and videos that can be made smaller will show up here.</string>
+
+    <!-- Pending review -->
+    <plurals name="home_review_title">
+        <item quantity="one">%d item ready for review</item>
+        <item quantity="other">%d items ready for review</item>
+    </plurals>
+    <string name="home_review_message">Accepting frees up to %s.</string>
+    <string name="home_review_action">Review</string>
+
+    <!-- Suggestions -->
+    <string name="home_suggestions_header">Suggestions</string>
+    <plurals name="home_suggestion_videos_4k">
+        <item quantity="one">%d video in 4K</item>
+        <item quantity="other">%d videos in 4K</item>
+    </plurals>
+    <plurals name="home_suggestion_videos_full_hd">
+        <item quantity="one">%d Full HD video</item>
+        <item quantity="other">%d Full HD videos</item>
+    </plurals>
+    <plurals name="home_suggestion_jpeg_photos">
+        <item quantity="one">%d JPEG photo</item>
+        <item quantity="other">%d JPEG photos</item>
+    </plurals>
+    <plurals name="home_suggestion_png_photos">
+        <item quantity="one">%d PNG photo</item>
+        <item quantity="other">%d PNG photos</item>
+    </plurals>
+    <plurals name="home_suggestion_screenshots">
+        <item quantity="one">%d screenshot or graphic</item>
+        <item quantity="other">%d screenshots and graphics</item>
+    </plurals>
+
+    <!-- Presets -->
+    <string name="home_presets_title">Choose quality</string>
+    <string name="preset_uhd_to_fhd">4K to Full HD</string>
+    <string name="preset_uhd_to_fhd_note">1080p. Looks the same on phones and most TVs.</string>
+    <string name="preset_uhd_to_hd">4K to HD</string>
+    <string name="preset_uhd_to_hd_note">720p. Smallest files; softer on big screens.</string>
+    <string name="preset_fhd_to_hd">Full HD to HD</string>
+    <string name="preset_fhd_to_hd_note">720p. Smaller files; slightly softer on big screens.</string>
+    <string name="preset_heic">HEIC</string>
+    <string name="preset_heic_note">Same quality at about half the size. Some older apps can\'t open it.</string>
+    <string name="preset_webp">WebP</string>
+    <string name="preset_webp_note">Opens almost everywhere. A little larger than HEIC.</string>
+    <string name="preset_webp_lossless">Lossless WebP</string>
+    <string name="preset_webp_lossless_note">Pixel-perfect. Best for screenshots and graphics.</string>
+    <string name="preset_other_note">Converted with the recommended settings.</string>
+</resources>

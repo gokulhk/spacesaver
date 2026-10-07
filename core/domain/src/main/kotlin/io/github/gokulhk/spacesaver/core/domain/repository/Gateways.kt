@@ -150,3 +150,15 @@ fun interface ZoneProvider {
     /** The current zone. */
     fun zone(): ZoneId
 }
+
+/**
+ * Port: files the user added to the plan from Browse ("Convert"). They join the plan even when
+ * their suggestion is switched off. Kept for the app process only.
+ */
+interface PlanAdditionsRepository {
+    /** IDs of the added files, re-emitted on change. */
+    val additions: Flow<Set<MediaId>>
+
+    /** Adds [ids] to the plan. */
+    suspend fun add(ids: Set<MediaId>)
+}

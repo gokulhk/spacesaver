@@ -52,6 +52,25 @@ class BatchRepositoryImplTest {
         }
 
     @Test
+    fun `active batches are observed until they finish`() =
+        runTest {
+            repository.observeActiveBatches().test {
+                assertThat(awaitItem()).isEmpty()
+
+                val batch = repository.create(listOf(video, image))
+                assertThat(
+                    awaitItem().single().items.map { it.original.id },
+                ).containsExactly(video.item.id, image.item.id)
+
+                repository.updateBatchStatus(batch.id, BatchStatus.AWAITING_REVIEW)
+                assertThat(awaitItem().single().status).isEqualTo(BatchStatus.AWAITING_REVIEW)
+
+                repository.updateBatchStatus(batch.id, BatchStatus.COMPLETED)
+                assertThat(awaitItem()).isEmpty()
+            }
+        }
+
+    @Test
     fun `items keep their original file and conversion option`() =
         runTest {
             val stored = repository.get(repository.create(listOf(video, image)).id)!!
@@ -134,20 +153,6 @@ class BatchRepositoryImplTest {
                 repository.applyReview(originalDeleted(batch))
 
                 assertThat(awaitItem()).isEqualTo(SavingsSummary(ByteSize.megabytes(3), ByteSize.megabytes(3)))
-            }
-        }
-
-    @Test
-    fun `awaiting review batches are observed`() =
-        runTest {
-            val batch = repository.create(listOf(image))
-
-            repository.observeAwaitingReview().test {
-                assertThat(awaitItem()).isEmpty()
-
-                database.batchDao().updateBatchStatus(batch.id.value, BatchStatus.AWAITING_REVIEW.name)
-
-                assertThat(awaitItem().map { it.id }).containsExactly(batch.id)
             }
         }
 

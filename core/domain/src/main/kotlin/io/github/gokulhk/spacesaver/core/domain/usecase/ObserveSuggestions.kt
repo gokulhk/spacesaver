@@ -3,10 +3,10 @@ package io.github.gokulhk.spacesaver.core.domain.usecase
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.conversion.TargetSelection
 import io.github.gokulhk.spacesaver.core.domain.eligibility.Eligibility
-import io.github.gokulhk.spacesaver.core.domain.eligibility.ImageEligibility
-import io.github.gokulhk.spacesaver.core.domain.eligibility.VideoEligibility
+import io.github.gokulhk.spacesaver.core.domain.eligibility.MediaEligibility
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
+import io.github.gokulhk.spacesaver.core.domain.repository.BatchRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.EncoderCapabilities
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaRepository
@@ -21,8 +21,10 @@ import io.github.gokulhk.spacesaver.core.model.VideoPreset
 import io.github.gokulhk.spacesaver.core.model.sumOfSize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /** A kind of savings opportunity shown as one card on the home screen. */
@@ -62,7 +64,8 @@ data class Suggestion(
 
 /**
  * Smart suggestions (plan Section 1.3): groups eligible files by kind, applies the user's
- * chosen option per group (or the default), and orders groups by savings.
+ * chosen option per group (or the default), and orders groups by savings. Files already in an
+ * unfinished batch are left out, so nothing is converted twice.
  */
 class ObserveSuggestions
     @Inject
@@ -71,8 +74,8 @@ class ObserveSuggestions
         private val settingsRepository: SettingsRepository,
         private val calibrationRepository: CalibrationRepository,
         private val encoderCapabilities: EncoderCapabilities,
-        private val videoEligibility: VideoEligibility,
-        private val imageEligibility: ImageEligibility,
+        private val eligibility: MediaEligibility,
+        private val batchRepository: BatchRepository,
     ) {
         /**
          * Suggestions, recomputed when the library, settings, or calibration change.
@@ -89,7 +92,13 @@ class ObserveSuggestions
                         mediaRepository.observeMedia(MediaType.IMAGE),
                         settingsRepository.settings,
                         calibrationRepository.observeCalibration(),
-                    ) { videos, images, settings, calibration ->
+                        batchRepository
+                            .observeActiveBatches()
+                            .map { batches -> batches.flatMap { batch -> batch.items.map { it.original.id } }.toSet() }
+                            .distinctUntilChanged(),
+                    ) { allVideos, allImages, settings, calibration, reserved ->
+                        val videos = allVideos.filter { it.id !in reserved }
+                        val images = allImages.filter { it.id !in reserved }
                         val jpegTarget = TargetSelection.jpegTarget(settings.imageFormat, heicSupported)
                         val context = Context(codec, jpegTarget, heicSupported, calibration, selections)
                         (videoGroups(videos) + imageGroups(images))
@@ -116,12 +125,8 @@ class ObserveSuggestions
             option: ConversionOption,
             context: Context,
         ): PlanCandidate? {
-            val eligibility =
-                when (option) {
-                    is ConversionOption.Video -> videoEligibility.evaluate(item, option.preset, context.codec)
-                    is ConversionOption.Image -> imageEligibility.evaluate(item, option.target, context.calibration)
-                }
-            return (eligibility as? Eligibility.Eligible)?.let { PlanCandidate(item, option, it.estimate) }
+            val result = eligibility.evaluate(item, option, context.codec, context.calibration)
+            return (result as? Eligibility.Eligible)?.let { PlanCandidate(item, option, it.estimate) }
         }
 
         private fun videoGroups(videos: List<MediaItem>): List<Pair<SuggestionGroup, List<MediaItem>>> {

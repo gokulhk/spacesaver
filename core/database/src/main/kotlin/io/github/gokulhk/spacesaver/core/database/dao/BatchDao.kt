@@ -33,10 +33,10 @@ abstract class BatchDao {
     @Query("SELECT * FROM batches WHERE id = :id")
     abstract fun observeBatch(id: Long): Flow<BatchWithItems?>
 
-    /** Batches in [status], oldest first. */
+    /** Batches in any of [statuses], oldest first, re-emitted on every change. */
     @Transaction
-    @Query("SELECT * FROM batches WHERE status = :status ORDER BY created_at_millis, id")
-    abstract fun observeBatchesWithStatus(status: String): Flow<List<BatchWithItems>>
+    @Query("SELECT * FROM batches WHERE status IN (:statuses) ORDER BY created_at_millis, id")
+    abstract fun observeBatchesWithStatuses(statuses: List<String>): Flow<List<BatchWithItems>>
 
     /** Sets a batch's status. */
     @Query("UPDATE batches SET status = :status WHERE id = :id")

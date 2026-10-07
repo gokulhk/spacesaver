@@ -16,6 +16,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             pluginManager.apply("spacesaver.android.library")
             pluginManager.apply("spacesaver.android.compose")
             pluginManager.apply("spacesaver.hilt")
+            pluginManager.apply("spacesaver.android.roborazzi")
             dependencies {
                 add("implementation", project(":core:model"))
                 add("implementation", project(":core:domain"))

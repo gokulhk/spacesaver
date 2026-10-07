@@ -22,6 +22,9 @@ import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.designsystem.theme.Spacing
 import io.github.gokulhk.spacesaver.core.model.ThemeMode
+import io.github.gokulhk.spacesaver.core.screenshottesting.captureComponentLightDark
+import io.github.gokulhk.spacesaver.core.screenshottesting.captureScreenshot
+import io.github.gokulhk.spacesaver.core.screenshottesting.screenshotPath
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -205,32 +208,9 @@ class ComponentScreenshotTest {
     private fun snapshot(
         name: String,
         content: @Composable () -> Unit,
-    ) {
-        composeRule.setContent {
-            Column(Modifier.testTag(CAPTURE_TAG)) {
-                ThemedFrame(ThemeMode.LIGHT, content)
-                ThemedFrame(ThemeMode.DARK, content)
-            }
-        }
-        composeRule.onNodeWithTag(CAPTURE_TAG).captureScreenshot(screenshotPath(name))
-    }
-
-    @Composable
-    private fun ThemedFrame(
-        themeMode: ThemeMode,
-        content: @Composable () -> Unit,
-    ) {
-        SpaceSaverTheme(themeMode = themeMode) {
-            // A Surface, like a real screen, so components inherit the theme's content color.
-            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
-                Box(Modifier.padding(Spacing.Large)) { content() }
-            }
-        }
-    }
+    ) = composeRule.captureComponentLightDark(name, content)
 
     private companion object {
-        const val CAPTURE_TAG = "screenshot"
-
         val SampleSegments =
             listOf(
                 StorageSegment(StorageCategory.VIDEOS, SizeText("42 GB"), 0.33f),
