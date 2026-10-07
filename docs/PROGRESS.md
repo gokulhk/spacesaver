@@ -119,9 +119,12 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
 
 ## Phase 6 — Deletion and savings ledger
 
-- [ ] 6.1 Deletion gateway
-- [ ] 6.2 Ledger integration
-- [ ] 6.3 Midnight rollover
+- [x] **6.1 Deletion gateway**: `AndroidDeletionGateway` builds one `MediaStore.createDeleteRequest` (through the `DeleteRequestFactory` seam) and suspends on `DeletionRequests` until `DeletionRequestHost` (in `MainActivity`) shows the system dialog and reports `RESULT_OK` (deleted) or anything else (declined). Requests whose caller went away are skipped; dialogs show one at a time. Own files (rejected outputs) are deleted without a dialog.
+  - Tests: broker (3), gateway with exact URIs and own-file deletion against the fake MediaStore (4), host with a fake `ActivityResultRegistry` (3), real `createDeleteRequest` on the emulator (1). The domain contract (approved → items deleted + ledger events; declined → nothing changes) is covered by the existing `ResolveBatchReview` and `DeleteMediaItems` tests.
+- [x] **6.2 Ledger integration**: a review's statuses and savings events are written in one Room transaction (`BatchRepositoryImpl.applyReview`). Tests: a failing ledger write rolls back the status changes (checked by removing the transaction: the test fails), and the summary flow re-emits after a review. `DependencyGraphTest` now injects every domain use case.
+  - Note: Browse deletion (`DeleteMediaItems`) records its events after the system deletes the files. A file deletion can't share a database transaction; a crash in between would lose that saving from the ledger, never record a false one.
+- [x] **6.3 Midnight rollover**: `ObserveSavingsSummary` re-subscribes at every local midnight (`SavingsCalculator.timeUntilNextDay`, DST-safe). Tests use `SchedulerClock` (clock driven by virtual time) for Kolkata, UTC, and a 23-hour New York day.
+  - Note: `delay` doesn't count deep sleep; a midnight passed while asleep is caught up when the UI re-collects on becoming visible (Phase 7 collects with lifecycle awareness).
 
 ## Phase 7 — Feature UI
 

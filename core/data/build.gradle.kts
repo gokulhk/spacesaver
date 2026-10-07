@@ -13,6 +13,10 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.truth)
+
     testImplementation(projects.core.testing)
     testImplementation(libs.androidx.datastore.preferences)
     testImplementation(libs.androidx.paging.testing)

@@ -12,6 +12,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlin.time.Duration.Companion.hours
 
 class SavingsCalculatorTest {
     private val now = Instant.parse("2024-06-11T12:00:00Z")
@@ -115,6 +116,16 @@ class SavingsCalculatorTest {
         val calculator = SavingsCalculator(Clock.fixed(Instant.parse("2024-03-31T20:00:00Z"), london))
 
         assertThat(calculator.startOfToday(london)).isEqualTo(Instant.parse("2024-03-31T00:00:00Z"))
+    }
+
+    @Test
+    fun `time until the next day is measured to local midnight`() {
+        val noonUtc = SavingsCalculator(Clock.fixed(Instant.parse("2024-06-11T12:00:00Z"), ZoneOffset.UTC))
+        val springForward = SavingsCalculator(Clock.fixed(Instant.parse("2024-03-10T16:00:00Z"), ZoneOffset.UTC))
+
+        assertThat(noonUtc.timeUntilNextDay(ZoneOffset.UTC)).isEqualTo(12.hours)
+        // On New York's 23-hour 2024-03-10, 16:00 UTC is noon EDT; local midnight is 04:00 UTC, 12 hours later.
+        assertThat(springForward.timeUntilNextDay(ZoneId.of("America/New_York"))).isEqualTo(12.hours)
     }
 
     @Test

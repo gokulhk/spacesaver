@@ -11,6 +11,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlin.time.Duration
+import kotlin.time.toKotlinDuration
 
 /**
  * Creates ledger events and sums them (plan Section 5.2). Time comes from the injected [clock];
@@ -65,6 +67,22 @@ class SavingsCalculator
 
         /** The instant the current local day started in [zone], correct on DST-change days. */
         fun startOfToday(zone: ZoneId): Instant = LocalDate.now(clock.withZone(zone)).atStartOfDay(zone).toInstant()
+
+        /**
+         * Time from now until the next local midnight in [zone]; correct on DST-change days
+         * (23 or 25 hours long) and when midnight itself is skipped.
+         */
+        fun timeUntilNextDay(zone: ZoneId): Duration {
+            val nextDay =
+                LocalDate
+                    .now(clock.withZone(zone))
+                    .plusDays(1)
+                    .atStartOfDay(zone)
+                    .toInstant()
+            return java.time.Duration
+                .between(clock.instant(), nextDay)
+                .toKotlinDuration()
+        }
 
         /** Lifetime and today totals of [events]. */
         fun summarize(

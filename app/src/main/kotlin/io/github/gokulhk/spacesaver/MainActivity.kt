@@ -15,8 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import dagger.hilt.android.AndroidEntryPoint
+import io.github.gokulhk.spacesaver.core.data.deletion.DeletionRequests
 import io.github.gokulhk.spacesaver.core.designsystem.preview.PreviewLightDark
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
+import io.github.gokulhk.spacesaver.deletion.DeletionRequestHost
+import javax.inject.Inject
 
 /**
  * Single activity hosting the Compose UI. Draws edge to edge; [SpaceSaverTheme] sets the system
@@ -27,11 +30,15 @@ import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    /** System delete dialogs requested by the domain. */
+    @Inject lateinit var deletionRequests: DeletionRequests
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SpaceSaverTheme {
+                DeletionRequestHost(deletionRequests)
                 BootstrapScreen()
             }
         }

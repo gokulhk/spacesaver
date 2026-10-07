@@ -7,6 +7,7 @@ Implements the domain ports (adapters) on top of Room, DataStore, MediaStore, an
 - Repositories: `MediaRepositoryImpl`, `StorageRepositoryImpl`, `SavingsRepositoryImpl`, `BatchRepositoryImpl`, `SettingsRepositoryImpl`, `CalibrationRepositoryImpl`, bound in `DataModule`.
 - `MediaStoreScanner` and `MediaStorePagingSource`: the media library.
 - `StorageStatsSource`: total and free bytes.
+- Deletion: `AndroidDeletionGateway` + `DeletionRequests`. The gateway suspends until the app's root UI (`DeletionRequestHost` in `:app`) shows the system delete dialog and reports the answer.
 
 ## Testing
 

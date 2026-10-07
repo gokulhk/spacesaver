@@ -18,10 +18,12 @@ import io.github.gokulhk.spacesaver.core.domain.repository.SettingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.UserSettings
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.BuildConversionPlan
+import io.github.gokulhk.spacesaver.core.domain.usecase.DeleteMediaItems
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveMediaBySize
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveStorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSuggestions
+import io.github.gokulhk.spacesaver.core.domain.usecase.ResolveBatchReview
 import io.github.gokulhk.spacesaver.core.domain.usecase.StartNextBatch
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import kotlinx.coroutines.flow.first
@@ -35,8 +37,7 @@ import javax.inject.Inject
 
 /**
  * Builds the real Hilt graph, so a missing binding fails the build, and checks that data-backed
- * use cases work end to end on Room and DataStore. Use cases needing the deletion port (Phase 6)
- * join this test when it gets an implementation.
+ * use cases work end to end on Room and DataStore. Every domain use case is injected here.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -68,6 +69,10 @@ class DependencyGraphTest {
     @Inject lateinit var cancelBatch: CancelBatch
 
     @Inject lateinit var reconcileBatches: ReconcileBatches
+
+    @Inject lateinit var resolveBatchReview: ResolveBatchReview
+
+    @Inject lateinit var deleteMediaItems: DeleteMediaItems
 
     @Before
     fun inject() {

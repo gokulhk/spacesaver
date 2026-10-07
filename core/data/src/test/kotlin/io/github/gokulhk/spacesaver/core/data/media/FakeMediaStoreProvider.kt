@@ -88,7 +88,12 @@ class FakeMediaStoreProvider : ContentProvider() {
         uri: Uri,
         selection: String?,
         selectionArgs: Array<out String>?,
-    ): Int = 0
+    ): Int {
+        val id = uri.lastPathSegment?.toLongOrNull() ?: return 0
+        val deleted = db.delete(tableFor(uri), "_id = ?", arrayOf(id.toString()))
+        if (deleted > 0) context!!.contentResolver.notifyChange(uri, null)
+        return deleted
+    }
 
     override fun update(
         uri: Uri,

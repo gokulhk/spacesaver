@@ -3,12 +3,16 @@ package io.github.gokulhk.spacesaver.core.data.repository
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import io.github.gokulhk.spacesaver.core.database.dao.SavingsDao
+import io.github.gokulhk.spacesaver.core.database.entity.SavingsEventEntity
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
+import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.PublishedOutput
 import io.github.gokulhk.spacesaver.core.domain.repository.ReviewUpdate
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsEvent
+import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsType
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
@@ -94,6 +98,43 @@ class BatchRepositoryImplTest {
                     .single()
                     .bytesSaved,
             ).isEqualTo(340_000_000)
+        }
+
+    @Test
+    fun `a failure while recording savings rolls back the status changes too`() =
+        runTest {
+            val failingLedger =
+                object : SavingsDao by database.savingsDao() {
+                    override suspend fun insertAll(events: List<SavingsEventEntity>): Unit = error("disk full")
+                }
+            val failing =
+                BatchRepositoryImpl(database, database.batchDao(), failingLedger, database.convertedFileDao(), clock)
+            val batch = failing.create(listOf(image))
+            failing.updateBatchStatus(batch.id, BatchStatus.AWAITING_REVIEW)
+            failing.updateItem(batch.items.single().id, ItemStatus.ACCEPTED)
+            val error = runCatching { failing.applyReview(originalDeleted(batch)) }.exceptionOrNull()
+
+            assertThat(error).hasMessageThat().isEqualTo("disk full")
+            val stored = failing.get(batch.id)!!
+            assertThat(stored.status).isEqualTo(BatchStatus.AWAITING_REVIEW)
+            assertThat(stored.items.single().status).isEqualTo(ItemStatus.ACCEPTED)
+            assertThat(database.savingsDao().allEvents()).isEmpty()
+        }
+
+    @Test
+    fun `the savings summary re-emits once a review is applied`() =
+        runTest {
+            val savings = SavingsRepositoryImpl(database.savingsDao())
+            val batch = repository.create(listOf(image))
+            repository.updateBatchStatus(batch.id, BatchStatus.AWAITING_REVIEW)
+
+            savings.observeTotals(todayStart = clock.instant()).test {
+                assertThat(awaitItem()).isEqualTo(SavingsSummary.ZERO)
+
+                repository.applyReview(originalDeleted(batch))
+
+                assertThat(awaitItem()).isEqualTo(SavingsSummary(ByteSize.megabytes(3), ByteSize.megabytes(3)))
+            }
         }
 
     @Test
@@ -185,6 +226,18 @@ class BatchRepositoryImplTest {
             assertThat(stored.sourceFormat).isEqualTo("JPEG")
             assertThat(stored.targetFormat).isEqualTo("HEIC")
         }
+
+    /** Completes [batch]'s single item by deleting its original, saving 3 MB. */
+    private fun originalDeleted(batch: Batch) =
+        ReviewUpdate(
+            batchId = batch.id,
+            batchStatus = BatchStatus.COMPLETED,
+            itemStatuses = mapOf(batch.items.single().id to ItemStatus.ORIGINAL_DELETED),
+            savingsEvents =
+                listOf(
+                    SavingsEvent(SavingsType.CONVERSION, ByteSize.megabytes(3), clock.instant(), image.item.id),
+                ),
+        )
 
     @Test
     fun `missing batch is null`() =
