@@ -43,6 +43,6 @@ class HomeScreenshotTest {
         name: String,
         state: HomeUiState,
     ) = composeRule.captureScreenLightDark(name) {
-        HomeScreen(state = state, onEvent = {}, onReviewClick = {})
+        HomeScreen(state = state, onEvent = {}, onReviewClick = {}, onOpenPlan = {})
     }
 }

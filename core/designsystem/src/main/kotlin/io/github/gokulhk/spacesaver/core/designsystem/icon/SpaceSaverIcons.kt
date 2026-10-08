@@ -1,6 +1,7 @@
 package io.github.gokulhk.spacesaver.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -84,6 +85,9 @@ object SpaceSaverIcons {
 
     /** Add files to the plan for conversion. */
     val Convert: ImageVector = Icons.Rounded.Compress
+
+    /** Go back to the previous screen; mirrored in right-to-left layouts. */
+    val Back: ImageVector = Icons.AutoMirrored.Rounded.ArrowBack
 
     /** Close or leave a mode, e.g. selection. */
     val Close: ImageVector = Icons.Rounded.Close

@@ -9,6 +9,9 @@ import io.github.gokulhk.spacesaver.core.domain.plan.PlannedBatch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.PendingReview
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanOverview
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanStatus
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanSuggestion
 import io.github.gokulhk.spacesaver.core.domain.usecase.StorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.Suggestion
 import io.github.gokulhk.spacesaver.core.domain.usecase.SuggestionGroup
@@ -93,8 +96,8 @@ internal object HomePreviewData {
                 listOf(
                     PendingReview(PENDING_BATCH, itemCount = 4, potentialSavings = ByteSize.megabytes(1_600)),
                 ),
-            plan = PlanState.Ready(plan),
-            suggestions = listOf(videos4k, jpegPhotos, screenshots).map { SuggestionItem(it, included = true) },
+            plan = PlanStatus.Ready(plan),
+            suggestions = listOf(videos4k, jpegPhotos, screenshots).map { PlanSuggestion(it, included = true) },
             planExpanded = false,
             presetSheet = null,
             isStarting = false,
@@ -108,7 +111,7 @@ internal object HomePreviewData {
         content.copy(
             pendingReviews = emptyList(),
             plan =
-                PlanState.Blocked(
+                PlanStatus.Blocked(
                     ConversionPlan(
                         batches = emptyList(),
                         blocked = videos4k.candidates.map { DeferredCandidate(it, ByteSize.gigabytes(8)) },
@@ -120,7 +123,16 @@ internal object HomePreviewData {
         )
 
     /** Nothing worth converting. */
-    val empty = content.copy(pendingReviews = emptyList(), plan = PlanState.Empty, suggestions = emptyList())
+    val empty = content.copy(pendingReviews = emptyList(), plan = PlanStatus.Empty, suggestions = emptyList())
+
+    /** The plan behind [ready], for Plan detail. */
+    val readyOverview = PlanOverview(ready.suggestions, plan.batches.flatMap { it.items }, ready.plan)
+
+    /** The plan behind [blocked]. */
+    val blockedOverview = PlanOverview(blocked.suggestions, videos4k.candidates, blocked.plan)
+
+    /** No plan at all. */
+    val emptyOverview = PlanOverview(suggestions = emptyList(), candidates = emptyList(), status = PlanStatus.Empty)
 
     private fun suggestion(
         group: SuggestionGroup,

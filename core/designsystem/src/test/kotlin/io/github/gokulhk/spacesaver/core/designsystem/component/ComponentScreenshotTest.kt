@@ -114,6 +114,17 @@ class ComponentScreenshotTest {
         }
 
     @Test
+    fun mediaInfoRow() =
+        snapshot("MediaInfoRow") {
+            MediaInfoRow(
+                name = "VID_20240611_181502.mp4",
+                size = SizeText("~450 MB"),
+                detail = "From 1.8 GB",
+                category = MediaCategory.VIDEO,
+            )
+        }
+
+    @Test
     fun mediaListRowSelected() =
         snapshot("MediaListRow_selected") {
             MediaListRow(

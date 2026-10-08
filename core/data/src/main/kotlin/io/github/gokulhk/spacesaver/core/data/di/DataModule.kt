@@ -13,7 +13,6 @@ import io.github.gokulhk.spacesaver.core.data.deletion.DeleteRequestFactory
 import io.github.gokulhk.spacesaver.core.data.deletion.MediaStoreDeleteRequestFactory
 import io.github.gokulhk.spacesaver.core.data.repository.BatchRepositoryImpl
 import io.github.gokulhk.spacesaver.core.data.repository.CalibrationRepositoryImpl
-import io.github.gokulhk.spacesaver.core.data.repository.InMemoryPlanAdditionsRepository
 import io.github.gokulhk.spacesaver.core.data.repository.MediaRepositoryImpl
 import io.github.gokulhk.spacesaver.core.data.repository.SavingsRepositoryImpl
 import io.github.gokulhk.spacesaver.core.data.repository.SettingsRepositoryImpl
@@ -24,7 +23,6 @@ import io.github.gokulhk.spacesaver.core.domain.repository.BatchRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.DeletionGateway
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaRepository
-import io.github.gokulhk.spacesaver.core.domain.repository.PlanAdditionsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.SavingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.SettingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.StorageRepository
@@ -56,10 +54,6 @@ interface DataModule {
     /** Calibration. */
     @Binds
     fun calibrationRepository(impl: CalibrationRepositoryImpl): CalibrationRepository
-
-    /** Files added to the plan from Browse. */
-    @Binds
-    fun planAdditionsRepository(impl: InMemoryPlanAdditionsRepository): PlanAdditionsRepository
 
     /** Permanent deletion with the system confirmation dialog. */
     @Binds

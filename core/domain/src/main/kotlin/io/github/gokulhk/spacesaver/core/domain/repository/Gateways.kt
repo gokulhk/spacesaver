@@ -4,6 +4,7 @@ import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpec
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.estimate.ConversionPair
 import io.github.gokulhk.spacesaver.core.domain.estimate.ProcessingSpeed
+import io.github.gokulhk.spacesaver.core.domain.plan.PlanChoices
 import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
@@ -153,7 +154,7 @@ fun interface ZoneProvider {
 
 /**
  * Port: files the user added to the plan from Browse ("Convert"). They join the plan even when
- * their suggestion is switched off. Kept for the app process only.
+ * their suggestion is switched off. Persisted, so they survive restarts.
  */
 interface PlanAdditionsRepository {
     /** IDs of the added files, re-emitted on change. */
@@ -161,4 +162,16 @@ interface PlanAdditionsRepository {
 
     /** Adds [ids] to the plan. */
     suspend fun add(ids: Set<MediaId>)
+}
+
+/**
+ * Port: the user's plan choices on Home and Plan detail, which suggestions are switched off and
+ * which preset each uses. Kept for the app process only; a new session starts from the defaults.
+ */
+interface PlanChoicesRepository {
+    /** Current choices, re-emitted on change. */
+    val choices: Flow<PlanChoices>
+
+    /** Replaces the choices with [transform] applied to the current ones. */
+    suspend fun update(transform: (PlanChoices) -> PlanChoices)
 }

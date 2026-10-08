@@ -3,11 +3,13 @@ package io.github.gokulhk.spacesaver.core.testing
 import androidx.paging.PagingData
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.estimate.ProcessingSpeed
+import io.github.gokulhk.spacesaver.core.domain.plan.PlanChoices
 import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.CalibrationSample
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaSort
 import io.github.gokulhk.spacesaver.core.domain.repository.PlanAdditionsRepository
+import io.github.gokulhk.spacesaver.core.domain.repository.PlanChoicesRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.SavingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.SettingsRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.StorageRepository
@@ -176,4 +178,13 @@ class FakePlanAdditionsRepository : PlanAdditionsRepository {
     override val additions: Flow<Set<MediaId>> = state
 
     override suspend fun add(ids: Set<MediaId>) = state.update { it + ids }
+}
+
+/** In-memory plan choices. */
+class FakePlanChoicesRepository : PlanChoicesRepository {
+    private val state = MutableStateFlow(PlanChoices())
+
+    override val choices: Flow<PlanChoices> = state
+
+    override suspend fun update(transform: (PlanChoices) -> PlanChoices) = state.update(transform)
 }

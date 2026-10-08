@@ -1,5 +1,7 @@
 package io.github.gokulhk.spacesaver.core.designsystem.component
 
+import androidx.compose.ui.test.assertHasNoClickAction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -53,6 +55,23 @@ class MediaListRowTest {
         setRow(selected = false)
 
         composeRule.onNodeWithText("VID_20240611.mp4").assertIsNotSelected()
+    }
+
+    @Test
+    fun `an info row is read as one item and offers no actions`() {
+        composeRule.setContent {
+            SpaceSaverTheme {
+                MediaInfoRow(
+                    name = "VID_20240611.mp4",
+                    size = SizeText("~450 MB", "about 450 megabytes"),
+                    detail = "From 1.8 GB",
+                    category = MediaCategory.VIDEO,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("VID_20240611.mp4").assertHasNoClickAction()
+        composeRule.onNodeWithText("From 1.8 GB").assertIsDisplayed()
     }
 
     private fun setRow(selected: Boolean) {

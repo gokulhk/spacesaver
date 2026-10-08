@@ -63,6 +63,64 @@ fun MediaListRow(
     modifier: Modifier = Modifier,
     thumbnail: @Composable () -> Unit = { ThumbnailPlaceholder(category) },
 ) {
+    val actionLabel = stringResource(R.string.media_select_action)
+    MediaRow(
+        name = name,
+        size = size,
+        detail = detail,
+        category = category,
+        selected = selected,
+        rowModifier =
+            Modifier
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = actionLabel)
+                .semantics(mergeDescendants = true) { this.selected = selected },
+        modifier = modifier,
+        thumbnail = thumbnail,
+    )
+}
+
+/**
+ * A media file shown for information only, e.g. an item in Plan detail: same layout as
+ * [MediaListRow], read as one item by accessibility services, with no actions.
+ *
+ * @param name the file name.
+ * @param size the size shown at the end, e.g. the estimated output "~450 MB".
+ * @param detail e.g. "From 1.8 GB".
+ * @param category whether the file is a video or an image.
+ * @param thumbnail the preview image; defaults to a category placeholder.
+ */
+@Composable
+fun MediaInfoRow(
+    name: String,
+    size: SizeText,
+    detail: String,
+    category: MediaCategory,
+    modifier: Modifier = Modifier,
+    thumbnail: @Composable () -> Unit = { ThumbnailPlaceholder(category) },
+) {
+    MediaRow(
+        name = name,
+        size = size,
+        detail = detail,
+        category = category,
+        selected = false,
+        rowModifier = Modifier.semantics(mergeDescendants = true) {},
+        modifier = modifier,
+        thumbnail = thumbnail,
+    )
+}
+
+@Composable
+private fun MediaRow(
+    name: String,
+    size: SizeText,
+    detail: String,
+    category: MediaCategory,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    rowModifier: Modifier = Modifier,
+    thumbnail: @Composable () -> Unit,
+) {
     // Surface sets a content color that matches the background, so text stays legible when the
     // row switches to the selected container color.
     Surface(
@@ -73,11 +131,7 @@ fun MediaListRow(
             modifier =
                 Modifier
                     .heightIn(min = RowMinHeight)
-                    .combinedClickable(
-                        onClick = onClick,
-                        onLongClick = onLongClick,
-                        onLongClickLabel = stringResource(R.string.media_select_action),
-                    ).semantics(mergeDescendants = true) { this.selected = selected }
+                    .then(rowModifier)
                     .padding(horizontal = Spacing.Large, vertical = Spacing.Small),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,

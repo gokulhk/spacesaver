@@ -39,6 +39,8 @@ import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.designsystem.theme.Spacing
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.usecase.PendingReview
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanStatus
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanSuggestion
 import io.github.gokulhk.spacesaver.core.domain.usecase.StorageOverview
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.ui.SizeTextFormatter
@@ -54,6 +56,7 @@ internal const val HOME_LIST_TAG = "home_list"
  * @param state what to show.
  * @param onEvent receives every user action.
  * @param onReviewClick opens the review of a batch.
+ * @param onOpenPlan opens Plan detail.
  * @param snackbarHostState shows errors.
  */
 @Composable
@@ -61,6 +64,7 @@ fun HomeScreen(
     state: HomeUiState,
     onEvent: (HomeEvent) -> Unit,
     onReviewClick: (BatchId) -> Unit,
+    onOpenPlan: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -71,7 +75,7 @@ fun HomeScreen(
     ) { padding ->
         when (state) {
             HomeUiState.Loading -> LoadingContent(Modifier.padding(padding))
-            is HomeUiState.Content -> HomeContent(state, onEvent, onReviewClick, padding)
+            is HomeUiState.Content -> HomeContent(state, HomeActions(onEvent, onReviewClick, onOpenPlan), padding)
         }
     }
     val sheet = (state as? HomeUiState.Content)?.presetSheet
@@ -87,10 +91,10 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     state: HomeUiState.Content,
-    onEvent: (HomeEvent) -> Unit,
-    onReviewClick: (BatchId) -> Unit,
+    actions: HomeActions,
     padding: PaddingValues,
 ) {
+    val onEvent = actions.onEvent
     val sizes = rememberSizeTextFormatter()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(padding).testTag(HOME_LIST_TAG),
@@ -104,14 +108,26 @@ private fun HomeContent(
             )
         }
         item { StorageSection(state.storage, sizes) }
-        items(state.pendingReviews, key = { it.batchId.value }) { PendingReviewCard(it, sizes, onReviewClick) }
+        items(state.pendingReviews, key = { it.batchId.value }) { PendingReviewCard(it, sizes, actions.onReviewClick) }
         item { PlanSection(state.plan, state.planExpanded, state.isStarting, onEvent) }
+        if (state.plan != PlanStatus.Empty) {
+            item {
+                TextButton(onClick = actions.onOpenPlan) { Text(stringResource(R.string.home_see_full_plan)) }
+            }
+        }
         suggestions(state.suggestions, sizes, onEvent)
     }
 }
 
+/** Everything the home list can ask for. */
+private class HomeActions(
+    val onEvent: (HomeEvent) -> Unit,
+    val onReviewClick: (BatchId) -> Unit,
+    val onOpenPlan: () -> Unit,
+)
+
 private fun LazyListScope.suggestions(
-    suggestions: List<SuggestionItem>,
+    suggestions: List<PlanSuggestion>,
     sizes: SizeTextFormatter,
     onEvent: (HomeEvent) -> Unit,
 ) {
@@ -193,11 +209,11 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
 @PreviewLightDark
 @Composable
 private fun HomeReadyPreview() {
-    SpaceSaverTheme { HomeScreen(HomePreviewData.ready, onEvent = {}, onReviewClick = {}) }
+    SpaceSaverTheme { HomeScreen(HomePreviewData.ready, onEvent = {}, onReviewClick = {}, onOpenPlan = {}) }
 }
 
 @PreviewLightDark
 @Composable
 private fun HomeBlockedPreview() {
-    SpaceSaverTheme { HomeScreen(HomePreviewData.blocked, onEvent = {}, onReviewClick = {}) }
+    SpaceSaverTheme { HomeScreen(HomePreviewData.blocked, onEvent = {}, onReviewClick = {}, onOpenPlan = {}) }
 }

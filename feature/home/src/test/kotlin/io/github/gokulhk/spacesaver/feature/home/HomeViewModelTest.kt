@@ -20,12 +20,14 @@ import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsCalculator
 import io.github.gokulhk.spacesaver.core.domain.usecase.BuildConversionPlan
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePendingReviews
-import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePlanAdditions
+import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePlan
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveStorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSuggestions
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanStatus
 import io.github.gokulhk.spacesaver.core.domain.usecase.StartNextBatch
 import io.github.gokulhk.spacesaver.core.domain.usecase.SuggestionGroup
+import io.github.gokulhk.spacesaver.core.domain.usecase.UpdatePlanChoices
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import io.github.gokulhk.spacesaver.core.model.MediaId
@@ -36,6 +38,7 @@ import io.github.gokulhk.spacesaver.core.testing.FakeCalibrationRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeEncoderCapabilities
 import io.github.gokulhk.spacesaver.core.testing.FakeMediaRepository
 import io.github.gokulhk.spacesaver.core.testing.FakePlanAdditionsRepository
+import io.github.gokulhk.spacesaver.core.testing.FakePlanChoicesRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeSavingsRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeSettingsRepository
 import io.github.gokulhk.spacesaver.core.testing.FakeStorageRepository
@@ -59,19 +62,12 @@ class HomeViewModelTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
-    private val media =
-        FakeMediaRepository(
-            (1L..3L).map { aVideo(id = it, height = 2160) } +
-                (10L..11L).map { anImage(id = it, format = MediaFormat.JPEG, size = ByteSize.megabytes(6)) },
-        )
-    private val storage = FakeStorageRepository()
-    private val settings = FakeSettingsRepository()
-    private val batches = FakeBatchRepository()
-    private val scheduler = FakeBatchScheduler()
-    private val calibration = FakeCalibrationRepository()
-    private val planner = BatchPlanner(BatchPlanConfig.DEFAULT)
-    private val budget = StorageBudget(storage, settings)
-    private val additions = FakePlanAdditionsRepository()
+    private val fixture = PlanFixture()
+    private val media = fixture.media
+    private val storage = fixture.storage
+    private val batches = fixture.batches
+    private val scheduler = fixture.scheduler
+    private val additions = fixture.additions
 
     // Lazy: viewModelScope must be created after MainDispatcherRule has replaced Dispatchers.Main.
     private val viewModel by lazy {
@@ -82,21 +78,9 @@ class HomeViewModelTest {
                     ObserveStorageOverview(storage),
                     ObservePendingReviews(batches),
                 ),
-            observeSuggestions =
-                ObserveSuggestions(
-                    media,
-                    settings,
-                    calibration,
-                    FakeEncoderCapabilities(hardwareHevc = true, heic = true),
-                    MediaEligibility(
-                        VideoEligibility(VideoSavingsEstimator(), SavingsThresholds.DEFAULT),
-                        ImageEligibility(ImageSavingsEstimator(), SavingsThresholds.DEFAULT),
-                    ),
-                    batches,
-                ),
-            buildPlan = BuildConversionPlan(budget, calibration, PlanSimulator(planner)),
-            startNextBatch = StartNextBatch(budget, settings, planner, batches, scheduler),
-            observePlanAdditions = ObservePlanAdditions(additions),
+            observePlan = fixture.observePlan,
+            updatePlanChoices = fixture.updatePlanChoices,
+            startNextBatch = fixture.startNextBatch,
         )
     }
 
@@ -116,7 +100,7 @@ class HomeViewModelTest {
             assertThat(content.suggestions.map { it.suggestion.group })
                 .containsExactly(SuggestionGroup.VIDEOS_4K, SuggestionGroup.JPEG_PHOTOS)
             assertThat(content.suggestions.all { it.included }).isTrue()
-            val plan = (content.plan as PlanState.Ready).plan
+            val plan = (content.plan as PlanStatus.Ready).plan
             assertThat(plan.batches.flatMap { it.items }).hasSize(5)
             assertThat(content.pendingReviews).isEmpty()
         }
@@ -128,7 +112,7 @@ class HomeViewModelTest {
 
             viewModel.onEvent(HomeEvent.ToggleSuggestion(SuggestionGroup.JPEG_PHOTOS, included = false))
             val withoutPhotos = viewModel.uiState.value as HomeUiState.Content
-            assertThat((withoutPhotos.plan as PlanState.Ready).plan.batches.flatMap { it.items }).hasSize(3)
+            assertThat((withoutPhotos.plan as PlanStatus.Ready).plan.batches.flatMap { it.items }).hasSize(3)
             assertThat(
                 withoutPhotos.suggestions
                     .single { !it.included }
@@ -136,7 +120,7 @@ class HomeViewModelTest {
             ).isEqualTo(SuggestionGroup.JPEG_PHOTOS)
 
             viewModel.onEvent(HomeEvent.ToggleSuggestion(SuggestionGroup.VIDEOS_4K, included = false))
-            assertThat((viewModel.uiState.value as HomeUiState.Content).plan).isEqualTo(PlanState.Empty)
+            assertThat((viewModel.uiState.value as HomeUiState.Content).plan).isEqualTo(PlanStatus.Empty)
         }
 
     @Test
@@ -147,7 +131,7 @@ class HomeViewModelTest {
 
             additions.add(setOf(MediaId(10)))
 
-            val plan = ((viewModel.uiState.value as HomeUiState.Content).plan as PlanState.Ready).plan
+            val plan = ((viewModel.uiState.value as HomeUiState.Content).plan as PlanStatus.Ready).plan
             assertThat(plan.batches.flatMap { it.items }.map { it.item.id }).containsExactly(
                 MediaId(1),
                 MediaId(2),
@@ -182,7 +166,7 @@ class HomeViewModelTest {
 
             storage.setFree(ByteSize.megabytes(RESERVE_ON_128_GB_MB))
 
-            val blocked = (viewModel.uiState.value as HomeUiState.Content).plan as PlanState.Blocked
+            val blocked = (viewModel.uiState.value as HomeUiState.Content).plan as PlanStatus.Blocked
             assertThat(blocked.freeUpAtLeast).isGreaterThan(ByteSize.ZERO)
         }
 

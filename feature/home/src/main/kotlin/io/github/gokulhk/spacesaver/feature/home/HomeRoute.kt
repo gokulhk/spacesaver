@@ -25,11 +25,13 @@ import io.github.gokulhk.spacesaver.core.ui.rememberSizeTextFormatter
  *
  * @param onBatchStart called with a newly started batch, to show its progress.
  * @param onReviewClick opens the review of a batch.
+ * @param onOpenPlan opens Plan detail.
  */
 @Composable
 fun HomeRoute(
     onBatchStart: (BatchId) -> Unit,
     onReviewClick: (BatchId) -> Unit,
+    onOpenPlan: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -69,6 +71,7 @@ fun HomeRoute(
             }
         },
         onReviewClick = onReviewClick,
+        onOpenPlan = onOpenPlan,
         modifier = modifier,
         snackbarHostState = snackbarHostState,
     )

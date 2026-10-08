@@ -1,22 +1,22 @@
 package io.github.gokulhk.spacesaver.feature.home
 
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
-import io.github.gokulhk.spacesaver.core.domain.plan.ConversionPlan
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.PendingReview
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanStatus
+import io.github.gokulhk.spacesaver.core.domain.usecase.PlanSuggestion
 import io.github.gokulhk.spacesaver.core.domain.usecase.StorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.Suggestion
 import io.github.gokulhk.spacesaver.core.domain.usecase.SuggestionGroup
-import io.github.gokulhk.spacesaver.core.model.ByteSize
 
 /**
  * What the home screen shows (plan Section 7.2). Values stay in domain types; the screen formats
  * them, so the ViewModel needs no Android resources.
  *
  * The banner and storage bar are always shown, so "empty" and "blocked" are states of the plan
- * card ([PlanState]) rather than of the whole screen.
+ * card ([PlanStatus]) rather than of the whole screen.
  */
 sealed interface HomeUiState {
     /** Waiting for the first figures. */
@@ -38,50 +38,13 @@ sealed interface HomeUiState {
         val savings: SavingsSummary,
         val storage: StorageOverview,
         val pendingReviews: List<PendingReview>,
-        val plan: PlanState,
-        val suggestions: List<SuggestionItem>,
+        val plan: PlanStatus,
+        val suggestions: List<PlanSuggestion>,
         val planExpanded: Boolean,
         val presetSheet: Suggestion?,
         val isStarting: Boolean,
     ) : HomeUiState
 }
-
-/** The plan card's state. */
-sealed interface PlanState {
-    /** Nothing selected or nothing worth converting. */
-    data object Empty : PlanState
-
-    /**
-     * At least one batch fits.
-     *
-     * @property plan the batches.
-     */
-    data class Ready(
-        val plan: ConversionPlan,
-    ) : PlanState
-
-    /**
-     * Nothing fits above the free-space reserve.
-     *
-     * @property plan the blocked candidates.
-     * @property freeUpAtLeast space to free before the smallest item fits.
-     */
-    data class Blocked(
-        val plan: ConversionPlan,
-        val freeUpAtLeast: ByteSize,
-    ) : PlanState
-}
-
-/**
- * A suggestion card.
- *
- * @property suggestion the opportunity.
- * @property included whether its files are in the plan.
- */
-data class SuggestionItem(
-    val suggestion: Suggestion,
-    val included: Boolean,
-)
 
 /** What the home screen reports. */
 sealed interface HomeEvent {

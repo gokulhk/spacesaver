@@ -28,11 +28,17 @@ class HomeScreenTest {
 
     private val events = mutableListOf<HomeEvent>()
     private val reviewed = mutableListOf<BatchId>()
+    private var planOpened = 0
 
     private fun show(state: HomeUiState) {
         composeRule.setContent {
             SpaceSaverTheme {
-                HomeScreen(state = state, onEvent = { events += it }, onReviewClick = { reviewed += it })
+                HomeScreen(
+                    state = state,
+                    onEvent = { events += it },
+                    onReviewClick = { reviewed += it },
+                    onOpenPlan = { planOpened++ },
+                )
             }
         }
     }
@@ -84,6 +90,16 @@ class HomeScreenTest {
         composeRule.onNodeWithText("Show batches").performScrollTo().performClick()
 
         assertThat(events).containsExactly(HomeEvent.SetPlanExpanded(true))
+    }
+
+    @Test
+    fun `the full plan can be opened`() {
+        show(HomePreviewData.ready)
+
+        composeRule.onNodeWithTag(HOME_LIST_TAG).performScrollToNode(hasText("See full plan"))
+        composeRule.onNodeWithText("See full plan").performClick()
+
+        assertThat(planOpened).isEqualTo(1)
     }
 
     @Test

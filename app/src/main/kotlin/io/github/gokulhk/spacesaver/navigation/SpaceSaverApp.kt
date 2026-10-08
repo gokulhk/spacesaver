@@ -21,6 +21,7 @@ import io.github.gokulhk.spacesaver.R
 import io.github.gokulhk.spacesaver.core.designsystem.icon.SpaceSaverIcons
 import io.github.gokulhk.spacesaver.feature.browse.BrowseRoute
 import io.github.gokulhk.spacesaver.feature.home.HomeRoute
+import io.github.gokulhk.spacesaver.feature.home.PlanDetailRoute
 import io.github.gokulhk.spacesaver.feature.onboarding.OnboardingRoute
 
 /** Top-level destinations in the bottom bar. Settings joins in 7.7. */
@@ -33,7 +34,8 @@ private enum class TopLevel(
 }
 
 /**
- * The app's screens: onboarding until media can be read, then Home and Browse in a bottom bar.
+ * The app's screens: onboarding until media can be read, then Home and Browse in a bottom bar,
+ * with Plan detail opened from Home.
  * Task 7.8 replaces this with type-safe navigation, back-stack handling, and deep links; until
  * then starting a batch and opening a review stay on Home.
  *
@@ -45,10 +47,19 @@ fun SpaceSaverApp(
     modifier: Modifier = Modifier,
 ) {
     var onboarded by rememberSaveable { mutableStateOf(canReadMedia) }
-    if (!onboarded) {
-        OnboardingRoute(onFinish = { onboarded = true }, modifier = modifier)
-        return
+    var showPlan by rememberSaveable { mutableStateOf(false) }
+    when {
+        !onboarded -> OnboardingRoute(onFinish = { onboarded = true }, modifier = modifier)
+        showPlan -> PlanDetailRoute(onBack = { showPlan = false }, modifier = modifier)
+        else -> TopLevelTabs(onOpenPlan = { showPlan = true }, modifier = modifier)
     }
+}
+
+@Composable
+private fun TopLevelTabs(
+    onOpenPlan: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var current by rememberSaveable { mutableStateOf(TopLevel.HOME) }
     Scaffold(
         modifier = modifier,
@@ -67,7 +78,7 @@ fun SpaceSaverApp(
     ) { padding ->
         Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
             when (current) {
-                TopLevel.HOME -> HomeRoute(onBatchStart = {}, onReviewClick = {})
+                TopLevel.HOME -> HomeRoute(onBatchStart = {}, onReviewClick = {}, onOpenPlan = onOpenPlan)
                 TopLevel.BROWSE -> BrowseRoute()
             }
         }

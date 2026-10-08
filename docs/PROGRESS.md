@@ -149,11 +149,16 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
   - Videos/Images tabs with the category total, "Largest first"/"Newest first", and a paged list with system thumbnails (`MediaThumbnail`, MediaStore's cache; no image library).
   - Long press starts multi-select; taps toggle while selecting; back or ✕ clears. The bottom bar offers Convert and Delete.
   - Delete: in-app confirmation with the space freed, then the system dialog; approved deletions are recorded as DELETION savings and the list reloads (MediaStore doesn't notify the pager). A declined system dialog keeps the selection.
-  - Convert: `AddToPlan` adds eligible files to the plan (in-memory `PlanAdditionsRepository`), and they stay in Home's plan even when their suggestion is switched off; ineligible files are reported.
+  - Convert: `AddToPlan` adds eligible files to the plan (`PlanAdditionsRepository`, persisted in DataStore since 7.4), and they stay in Home's plan even when their suggestion is switched off; ineligible files are reported.
   - Fix (found on the emulator): files in an unfinished batch were suggested again, so a second batch re-converted them while the first awaited review. Suggestions now leave out every file in an active batch (`BatchRepository.observeActiveBatches`, which also replaces `observeAwaitingReview`). Eligibility routing moved into `MediaEligibility`.
   - Minimal Home/Browse bottom bar in `SpaceSaverApp` until 7.8.
   - Verified on the emulator: thumbnails, tabs, delete via system dialog (list, total, and snackbar update), Convert with the JPEG suggestion off (plan ~52.8 → ~53.2 MB), and the notification prompt on "Start batch 1" with the permission revoked.
-- [ ] 7.4 Plan detail
+- [x] 7.4 Plan detail
+  - The plan moved into the domain: `ObservePlan` (suggestions + switches + presets + additions + free space → `PlanOverview` with `PlanStatus` Empty/Ready/Blocked) and `UpdatePlanChoices`. Home and Plan detail share it, so a change on one shows on the other. Switches and presets stay for the app process (`InMemoryPlanChoicesRepository`).
+  - Files added from Browse now survive restarts (`PlanAdditionsDataSource`, a string set in the settings DataStore; IDs are never reused by MediaStore, so stale entries are harmless).
+  - Screen: totals, per-suggestion switch + preset chips + quality note, each batch with every item's estimated output ("From 620.0 MB → ~150.0 MB"), and a "Waiting for space" section with the free space each blocked item needs. Opened from "See full plan" on Home; back returns.
+  - New design-system `MediaInfoRow`: `MediaListRow`'s layout without actions, for read-only lists.
+  - Verified on the emulator: Plan detail with real thumbnails and estimates; an added photo stayed in the plan after a force-stop with its suggestion switched off; Home showed the same plan.
 - [ ] 7.5 Batch progress
 - [ ] 7.6 Batch review
 - [ ] 7.7 Settings
