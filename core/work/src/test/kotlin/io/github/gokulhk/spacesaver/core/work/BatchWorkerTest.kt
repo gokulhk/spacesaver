@@ -67,6 +67,7 @@ class BatchWorkerTest {
                     clock = TestClock(),
                 ),
             stateMachine = BatchStateMachine(),
+            clock = TestClock(),
         )
     private val progress = mutableListOf<Data>()
     private val foreground = mutableListOf<ForegroundInfo>()
@@ -104,10 +105,10 @@ class BatchWorkerTest {
             worker(batch.id.value).doWork()
 
             assertThat(progress).isNotEmpty()
-            val last = progress.last()
-            assertThat(last.getInt(BatchWorker.KEY_TOTAL_ITEMS, -1)).isEqualTo(2)
-            assertThat(last.getInt(BatchWorker.KEY_COMPLETED_ITEMS, -1)).isEqualTo(2)
-            assertThat(last.getFloat(BatchWorker.KEY_PROGRESS, -1f)).isEqualTo(1f)
+            val last = checkNotNull(progress.last().toBatchProgress())
+            assertThat(last.totalItems).isEqualTo(2)
+            assertThat(last.completedItems).isEqualTo(2)
+            assertThat(last.overall).isEqualTo(1f)
         }
 
     @Test

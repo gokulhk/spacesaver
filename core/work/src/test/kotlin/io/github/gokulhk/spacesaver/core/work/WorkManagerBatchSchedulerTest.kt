@@ -9,6 +9,7 @@ import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -30,6 +31,15 @@ class WorkManagerBatchSchedulerTest {
         workManager = WorkManager.getInstance(context)
         scheduler = WorkManagerBatchScheduler(workManager)
     }
+
+    @Test
+    fun `a batch with no running work has no progress`() =
+        runTest {
+            scheduler.enqueue(BatchId(1), chargingOnly = true)
+
+            assertThat(scheduler.observeProgress(BatchId(1)).first()).isNull()
+            assertThat(scheduler.observeProgress(BatchId(2)).first()).isNull()
+        }
 
     @Test
     fun `charging-only batches require charging`() =

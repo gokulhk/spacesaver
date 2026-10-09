@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="batch_progress_title">Batch progress</string>
+    <string name="batch_back">Back</string>
+    <string name="batch_loading">Loading batch</string>
+
+    <!-- %1$d files done of %2$d. -->
+    <plurals name="batch_files_done">
+        <item quantity="one">%1$d of %2$d file</item>
+        <item quantity="other">%1$d of %2$d files</item>
+    </plurals>
+    <!-- %1$d files converted of %2$d, once the batch has stopped. -->
+    <plurals name="batch_files_converted">
+        <item quantity="one">%1$d of %2$d file converted</item>
+        <item quantity="other">%1$d of %2$d files converted</item>
+    </plurals>
+    <!-- %1$s: e.g. "3 of 6 files", %2$d: percent done. -->
+    <string name="batch_progress_summary">%1$s · %2$d%%</string>
+    <string name="batch_elapsed">Elapsed %s</string>
+    <!-- %s: an approximate duration, e.g. "about 2 min". -->
+    <string name="batch_time_left">%s left</string>
+    <string name="batch_time">%1$s · %2$s</string>
+
+    <string name="batch_waiting">Waiting to start. If \"Only while charging\" is on, plug in your phone.</string>
+    <string name="batch_awaiting_review">All files are converted. Review them to free up space.</string>
+    <string name="batch_stopped_for_review">Batch stopped. Review the files converted so far to free up space.</string>
+    <string name="batch_cancelled">Batch cancelled. Nothing else will be converted.</string>
+    <string name="batch_failed">This batch stopped because of an error.</string>
+    <string name="batch_finished">This batch is finished.</string>
+
+    <string name="batch_cancel">Cancel batch</string>
+    <string name="batch_review">Review</string>
+    <string name="batch_cancel_title">Stop this batch?</string>
+    <string name="batch_cancel_message">Files already converted stay ready for review. The rest won\'t be converted.</string>
+    <string name="batch_cancel_confirm">Stop batch</string>
+    <string name="batch_cancel_dismiss">Keep going</string>
+
+    <string name="batch_item_saves">Saves %s</string>
+    <string name="batch_item_failed">Couldn\'t convert this file</string>
+
+    <string name="batch_not_found_title">This batch no longer exists</string>
+    <string name="batch_not_found_message">It may have been reviewed or cleared already.</string>
+</resources>

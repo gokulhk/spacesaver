@@ -10,8 +10,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -19,6 +21,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import io.github.gokulhk.spacesaver.R
 import io.github.gokulhk.spacesaver.core.designsystem.icon.SpaceSaverIcons
+import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
+import io.github.gokulhk.spacesaver.feature.batch.BatchProgressRoute
 import io.github.gokulhk.spacesaver.feature.browse.BrowseRoute
 import io.github.gokulhk.spacesaver.feature.home.HomeRoute
 import io.github.gokulhk.spacesaver.feature.home.PlanDetailRoute
@@ -35,29 +39,61 @@ private enum class TopLevel(
 
 /**
  * The app's screens: onboarding until media can be read, then Home and Browse in a bottom bar,
- * with Plan detail opened from Home.
+ * with Plan detail and batch progress opened on top.
  * Task 7.8 replaces this with type-safe navigation, back-stack handling, and deep links; until
  * then starting a batch and opening a review stay on Home.
  *
  * @param canReadMedia whether media access was already granted when the app started.
+ * @param deepLinkBatch a batch to open from its notification, if any.
+ * @param onDeepLinkOpen called once [deepLinkBatch] has been opened.
  */
 @Composable
 fun SpaceSaverApp(
     canReadMedia: Boolean,
+    deepLinkBatch: BatchId?,
+    onDeepLinkOpen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var onboarded by rememberSaveable { mutableStateOf(canReadMedia) }
     var showPlan by rememberSaveable { mutableStateOf(false) }
+    var openBatch by rememberSaveable { mutableStateOf<Long?>(null) }
+    val currentOnDeepLinkOpen by rememberUpdatedState(onDeepLinkOpen)
+    LaunchedEffect(deepLinkBatch) {
+        if (deepLinkBatch != null) {
+            openBatch = deepLinkBatch.value
+            currentOnDeepLinkOpen()
+        }
+    }
+    val batch = openBatch
     when {
-        !onboarded -> OnboardingRoute(onFinish = { onboarded = true }, modifier = modifier)
-        showPlan -> PlanDetailRoute(onBack = { showPlan = false }, modifier = modifier)
-        else -> TopLevelTabs(onOpenPlan = { showPlan = true }, modifier = modifier)
+        !onboarded -> {
+            OnboardingRoute(onFinish = { onboarded = true }, modifier = modifier)
+        }
+
+        batch != null -> {
+            // Review arrives in 7.6; until then the Review button returns to Home.
+            BatchProgressRoute(
+                batchId = BatchId(batch),
+                onReview = { openBatch = null },
+                onBack = { openBatch = null },
+                modifier = modifier,
+            )
+        }
+
+        showPlan -> {
+            PlanDetailRoute(onBack = { showPlan = false }, modifier = modifier)
+        }
+
+        else -> {
+            TopLevelTabs(onOpenPlan = { showPlan = true }, onOpenBatch = { openBatch = it.value }, modifier = modifier)
+        }
     }
 }
 
 @Composable
 private fun TopLevelTabs(
     onOpenPlan: () -> Unit,
+    onOpenBatch: (BatchId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var current by rememberSaveable { mutableStateOf(TopLevel.HOME) }
@@ -78,7 +114,7 @@ private fun TopLevelTabs(
     ) { padding ->
         Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
             when (current) {
-                TopLevel.HOME -> HomeRoute(onBatchStart = {}, onReviewClick = {}, onOpenPlan = onOpenPlan)
+                TopLevel.HOME -> HomeRoute(onOpenBatch = onOpenBatch, onReviewClick = {}, onOpenPlan = onOpenPlan)
                 TopLevel.BROWSE -> BrowseRoute()
             }
         }

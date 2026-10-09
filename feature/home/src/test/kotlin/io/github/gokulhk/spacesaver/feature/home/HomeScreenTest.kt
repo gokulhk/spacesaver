@@ -29,6 +29,7 @@ class HomeScreenTest {
     private val events = mutableListOf<HomeEvent>()
     private val reviewed = mutableListOf<BatchId>()
     private var planOpened = 0
+    private val opened = mutableListOf<BatchId>()
 
     private fun show(state: HomeUiState) {
         composeRule.setContent {
@@ -38,6 +39,7 @@ class HomeScreenTest {
                     onEvent = { events += it },
                     onReviewClick = { reviewed += it },
                     onOpenPlan = { planOpened++ },
+                    onOpenBatch = { opened += it },
                 )
             }
         }
@@ -90,6 +92,16 @@ class HomeScreenTest {
         composeRule.onNodeWithText("Show batches").performScrollTo().performClick()
 
         assertThat(events).containsExactly(HomeEvent.SetPlanExpanded(true))
+    }
+
+    @Test
+    fun `a running batch can be opened`() {
+        show(HomePreviewData.running)
+
+        composeRule.onNodeWithText("Batch in progress").assertIsDisplayed()
+        composeRule.onNodeWithText("View progress").performClick()
+
+        assertThat(opened).containsExactly(HomePreviewData.RUNNING_BATCH)
     }
 
     @Test

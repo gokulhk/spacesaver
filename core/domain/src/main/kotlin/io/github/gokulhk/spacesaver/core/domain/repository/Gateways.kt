@@ -4,6 +4,7 @@ import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpec
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.estimate.ConversionPair
 import io.github.gokulhk.spacesaver.core.domain.estimate.ProcessingSpeed
+import io.github.gokulhk.spacesaver.core.domain.execution.BatchProgress
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanChoices
 import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
 import io.github.gokulhk.spacesaver.core.model.ByteSize
@@ -144,6 +145,9 @@ interface BatchScheduler {
 
     /** Stops [batchId]'s work, if any. */
     suspend fun cancel(batchId: BatchId)
+
+    /** Live progress of [batchId] while its work runs; null while waiting or once finished. */
+    fun observeProgress(batchId: BatchId): Flow<BatchProgress?>
 }
 
 /** Port: the device's current time zone, read on each call so "today" follows travel. */

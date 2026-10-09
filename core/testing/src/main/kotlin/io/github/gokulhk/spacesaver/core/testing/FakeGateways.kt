@@ -7,6 +7,7 @@ import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionResult
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpec
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConverterRegistry
 import io.github.gokulhk.spacesaver.core.domain.conversion.MediaConverter
+import io.github.gokulhk.spacesaver.core.domain.execution.BatchProgress
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
 import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
@@ -86,7 +87,18 @@ class FakeBatchScheduler : BatchScheduler {
     override suspend fun cancel(batchId: BatchId) {
         cancelled += batchId
         scheduled -= batchId
+        progress.update { it - batchId }
     }
+
+    private val progress = MutableStateFlow<Map<BatchId, BatchProgress>>(emptyMap())
+
+    /** Reports [value] as [batchId]'s live progress, as a running worker would; null clears it. */
+    fun setProgress(
+        batchId: BatchId,
+        value: BatchProgress?,
+    ) = progress.update { if (value == null) it - batchId else it + (batchId to value) }
+
+    override fun observeProgress(batchId: BatchId): Flow<BatchProgress?> = progress.map { it[batchId] }
 }
 
 /**

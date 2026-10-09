@@ -1,6 +1,7 @@
 package io.github.gokulhk.spacesaver.feature.home
 
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
+import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
@@ -28,6 +29,7 @@ sealed interface HomeUiState {
      * @property savings lifetime and today's savings.
      * @property storage the storage split.
      * @property pendingReviews batches awaiting review, oldest first.
+     * @property runningBatch the batch planned or converting, if any.
      * @property plan the plan card.
      * @property suggestions savings opportunities, largest first.
      * @property planExpanded whether the plan card lists its batches.
@@ -38,6 +40,7 @@ sealed interface HomeUiState {
         val savings: SavingsSummary,
         val storage: StorageOverview,
         val pendingReviews: List<PendingReview>,
+        val runningBatch: Batch?,
         val plan: PlanStatus,
         val suggestions: List<PlanSuggestion>,
         val planExpanded: Boolean,

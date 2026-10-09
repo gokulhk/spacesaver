@@ -33,7 +33,7 @@ class BatchWorker
     ) : CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
             val batchId = inputData.getLong(KEY_BATCH_ID, NO_BATCH).takeIf { it != NO_BATCH } ?: return Result.failure()
-            setForeground(notifications.foregroundInfo(null))
+            setForeground(notifications.foregroundInfo(BatchId(batchId), null))
             // Conflated: a slow notification update never delays conversion, and the latest progress wins.
             val updates = Channel<BatchProgress>(Channel.CONFLATED)
             return coroutineScope {
@@ -41,7 +41,7 @@ class BatchWorker
                     launch {
                         for (progress in updates) {
                             setProgress(progress.toData())
-                            setForeground(notifications.foregroundInfo(progress))
+                            setForeground(notifications.foregroundInfo(BatchId(batchId), progress))
                         }
                     }
                 val result = runner.run(BatchId(batchId)) { updates.trySend(it) }
@@ -54,15 +54,8 @@ class BatchWorker
             }
         }
 
-        override suspend fun getForegroundInfo(): ForegroundInfo = notifications.foregroundInfo(null)
-
-        private fun BatchProgress.toData(): Data =
-            workDataOf(
-                KEY_COMPLETED_ITEMS to completedItems,
-                KEY_TOTAL_ITEMS to totalItems,
-                KEY_PROGRESS to overall,
-                KEY_CURRENT_ITEM to currentItemName,
-            )
+        override suspend fun getForegroundInfo(): ForegroundInfo =
+            notifications.foregroundInfo(BatchId(inputData.getLong(KEY_BATCH_ID, NO_BATCH)), null)
 
         /** Input, output, and progress keys. */
         companion object {
@@ -71,18 +64,6 @@ class BatchWorker
 
             /** Output: the batch status name when done. */
             const val KEY_STATUS = "status"
-
-            /** Progress: items finished (Int). */
-            const val KEY_COMPLETED_ITEMS = "completed_items"
-
-            /** Progress: items in the batch (Int). */
-            const val KEY_TOTAL_ITEMS = "total_items"
-
-            /** Progress: overall progress from 0 to 1 (Float). */
-            const val KEY_PROGRESS = "progress"
-
-            /** Progress: the file being converted (String, may be absent). */
-            const val KEY_CURRENT_ITEM = "current_item"
 
             private const val NO_BATCH = -1L
         }

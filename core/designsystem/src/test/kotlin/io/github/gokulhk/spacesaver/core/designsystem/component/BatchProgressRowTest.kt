@@ -30,12 +30,21 @@ class BatchProgressRowTest {
     }
 
     @Test
+    fun `cancelled row says so, not that space ran out`() {
+        setRow(ProgressStatus.CANCELLED)
+
+        composeRule.onNodeWithText("Cancelled", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("not enough space", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun `status labels are distinct for every status`() {
         val labels =
             mapOf(
                 ProgressStatus.QUEUED to "Waiting",
                 ProgressStatus.DONE to "Done",
                 ProgressStatus.FAILED to "Failed",
+                ProgressStatus.CANCELLED to "Cancelled",
             )
         val current = mutableStateOf(ProgressStatus.QUEUED)
         composeRule.setContent {

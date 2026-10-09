@@ -21,6 +21,7 @@ import io.github.gokulhk.spacesaver.core.domain.savings.SavingsCalculator
 import io.github.gokulhk.spacesaver.core.domain.usecase.BuildConversionPlan
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePendingReviews
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePlan
+import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveRunningBatch
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveStorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSuggestions
@@ -77,6 +78,7 @@ class HomeViewModelTest {
                     ObserveSavingsSummary(FakeSavingsRepository(), SavingsCalculator(TestClock())) { ZoneOffset.UTC },
                     ObserveStorageOverview(storage),
                     ObservePendingReviews(batches),
+                    ObserveRunningBatch(batches),
                 ),
             observePlan = fixture.observePlan,
             updatePlanChoices = fixture.updatePlanChoices,
@@ -199,6 +201,7 @@ class HomeViewModelTest {
                 val started = awaitItem() as HomeEffect.BatchStarted
                 assertThat(scheduler.scheduled).contains(started.batchId)
             }
+            assertThat((viewModel.uiState.value as HomeUiState.Content).runningBatch?.id).isNotNull()
         }
 
     @Test

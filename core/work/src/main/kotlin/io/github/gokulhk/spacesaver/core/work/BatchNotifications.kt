@@ -5,10 +5,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import androidx.work.ForegroundInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.gokulhk.spacesaver.core.domain.execution.BatchProgress
+import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -18,11 +21,17 @@ class BatchNotifications
     constructor(
         @ApplicationContext private val context: Context,
     ) {
-        /** Foreground info for [progress]; null while the batch is starting. */
-        fun foregroundInfo(progress: BatchProgress?): ForegroundInfo =
-            ForegroundInfo(NOTIFICATION_ID, notification(progress), ForegroundServiceTypes.forBatches())
+        /** Foreground info for [batchId] at [progress]; null progress while the batch is starting. */
+        fun foregroundInfo(
+            batchId: BatchId,
+            progress: BatchProgress?,
+        ): ForegroundInfo =
+            ForegroundInfo(NOTIFICATION_ID, notification(batchId, progress), ForegroundServiceTypes.forBatches())
 
-        private fun notification(progress: BatchProgress?): Notification {
+        private fun notification(
+            batchId: BatchId,
+            progress: BatchProgress?,
+        ): Notification {
             ensureChannel()
             val text =
                 if (progress?.currentItemName == null) {
@@ -45,20 +54,26 @@ class BatchNotifications
                 .setOnlyAlertOnce(true)
                 .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-                .setContentIntent(openAppIntent())
+                .setContentIntent(openBatchIntent(batchId))
                 .build()
         }
 
-        /** Opens the app; Phase 7 deep-links to the batch progress screen. */
-        private fun openAppIntent(): PendingIntent? =
-            context.packageManager.getLaunchIntentForPackage(context.packageName)?.let { intent ->
-                PendingIntent.getActivity(
-                    context,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-                )
-            }
+        /**
+         * Opens [batchId]'s progress screen. Limited to this app's package, and brings an open app
+         * to the front instead of starting a second copy.
+         */
+        private fun openBatchIntent(batchId: BatchId): PendingIntent {
+            val intent =
+                Intent(Intent.ACTION_VIEW, BatchDeepLink.uri(batchId).toUri())
+                    .setPackage(context.packageName)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            return PendingIntent.getActivity(
+                context,
+                batchId.value.toInt(),
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        }
 
         private fun ensureChannel() {
             val manager = context.getSystemService(NotificationManager::class.java)

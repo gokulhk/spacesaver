@@ -1,12 +1,17 @@
 package io.github.gokulhk.spacesaver.feature.home
 
+import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.estimate.SizeEstimate
 import io.github.gokulhk.spacesaver.core.domain.plan.ConversionPlan
 import io.github.gokulhk.spacesaver.core.domain.plan.DeferredCandidate
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
 import io.github.gokulhk.spacesaver.core.domain.plan.PlannedBatch
+import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
+import io.github.gokulhk.spacesaver.core.domain.repository.BatchItem
+import io.github.gokulhk.spacesaver.core.domain.repository.BatchItemId
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.PendingReview
 import io.github.gokulhk.spacesaver.core.domain.usecase.PlanOverview
@@ -96,6 +101,7 @@ internal object HomePreviewData {
                 listOf(
                     PendingReview(PENDING_BATCH, itemCount = 4, potentialSavings = ByteSize.megabytes(1_600)),
                 ),
+            runningBatch = null,
             plan = PlanStatus.Ready(plan),
             suggestions = listOf(videos4k, jpegPhotos, screenshots).map { PlanSuggestion(it, included = true) },
             planExpanded = false,
@@ -124,6 +130,29 @@ internal object HomePreviewData {
 
     /** Nothing worth converting. */
     val empty = content.copy(pendingReviews = emptyList(), plan = PlanStatus.Empty, suggestions = emptyList())
+
+    /** The batch in [running]. */
+    val RUNNING_BATCH = BatchId(4)
+
+    /** A batch converting: 2 of 5 files done. */
+    val running =
+        content.copy(
+            runningBatch =
+                Batch(
+                    RUNNING_BATCH,
+                    BatchStatus.CONVERTING,
+                    videos4k.candidates.take(5).mapIndexed { index, candidate ->
+                        BatchItem(
+                            id = BatchItemId(index.toLong()),
+                            original = candidate.item,
+                            option = candidate.option,
+                            estimatedOutput = candidate.estimatedOutput,
+                            status = if (index < 2) ItemStatus.CONVERTED else ItemStatus.QUEUED,
+                        )
+                    },
+                    Instant.EPOCH,
+                ),
+        )
 
     /** The plan behind [ready], for Plan detail. */
     val readyOverview = PlanOverview(ready.suggestions, plan.batches.flatMap { it.items }, ready.plan)

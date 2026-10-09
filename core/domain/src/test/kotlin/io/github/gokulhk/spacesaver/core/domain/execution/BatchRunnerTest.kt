@@ -65,6 +65,7 @@ class BatchRunnerTest {
                     clock = clock,
                 ),
             stateMachine = BatchStateMachine(),
+            clock = clock,
         )
 
     private val photos = (1L..3L).map { aCandidate(id = it, original = mb(10), output = mb(4)) }
@@ -270,12 +271,14 @@ class BatchRunnerTest {
         runTest {
             val batch = batches.create(photos)
             val progress = mutableListOf<BatchProgress>()
+            val startedAt = clock.instant()
 
             runner.run(batch.id) { progress += it }
 
             assertThat(progress.map { it.totalItems }.distinct()).containsExactly(3)
             assertThat(progress.map { it.overall }).isInOrder()
             assertThat(progress.last().overall).isEqualTo(1f)
+            assertThat(progress.map { it.startedAt }.distinct()).containsExactly(startedAt)
             assertThat(
                 progress.map { it.currentItemName }.distinct(),
             ).containsAtLeast("IMG_1.jpeg", "IMG_2.jpeg", "IMG_3.jpeg")

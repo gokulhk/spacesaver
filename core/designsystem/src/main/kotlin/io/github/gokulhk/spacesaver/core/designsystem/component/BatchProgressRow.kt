@@ -46,6 +46,9 @@ enum class ProgressStatus {
 
     /** Skipped because free space dropped below the reserve. */
     SKIPPED,
+
+    /** Not converted because the user cancelled the batch. */
+    CANCELLED,
 }
 
 /**
@@ -119,6 +122,10 @@ private fun statusText(
                 stringResource(R.string.progress_status_failed)
             }
 
+            ProgressStatus.CANCELLED -> {
+                stringResource(R.string.progress_status_cancelled)
+            }
+
             ProgressStatus.SKIPPED -> {
                 stringResource(R.string.progress_status_skipped)
             }
@@ -133,7 +140,7 @@ private val ProgressStatus.icon: ImageVector
             ProgressStatus.IN_PROGRESS -> SpaceSaverIcons.InProgress
             ProgressStatus.DONE -> SpaceSaverIcons.Done
             ProgressStatus.FAILED -> SpaceSaverIcons.Failed
-            ProgressStatus.SKIPPED -> SpaceSaverIcons.Skipped
+            ProgressStatus.SKIPPED, ProgressStatus.CANCELLED -> SpaceSaverIcons.Skipped
         }
 
 private val ProgressStatus.tint: Color
@@ -141,7 +148,7 @@ private val ProgressStatus.tint: Color
     @ReadOnlyComposable
     get() =
         when (this) {
-            ProgressStatus.QUEUED -> MaterialTheme.colorScheme.onSurfaceVariant
+            ProgressStatus.QUEUED, ProgressStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
             ProgressStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
             ProgressStatus.DONE -> SpaceSaverTheme.colors.savings
             ProgressStatus.FAILED -> MaterialTheme.colorScheme.error

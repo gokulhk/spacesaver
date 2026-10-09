@@ -159,7 +159,14 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
   - Screen: totals, per-suggestion switch + preset chips + quality note, each batch with every item's estimated output ("From 620.0 MB → ~150.0 MB"), and a "Waiting for space" section with the free space each blocked item needs. Opened from "See full plan" on Home; back returns.
   - New design-system `MediaInfoRow`: `MediaListRow`'s layout without actions, for read-only lists.
   - Verified on the emulator: Plan detail with real thumbnails and estimates; an added photo stayed in the plan after a force-stop with its suggestion switched off; Home showed the same plan.
-- [ ] 7.5 Batch progress
+- [x] 7.5 Batch progress
+  - Screen (`:feature:batch`): overall progress and percentage, elapsed time (ticks each second) and time left, each file's status with a bar while converting and the measured saving once done, Cancel with confirmation, and Review once converted. A batch waiting to start (e.g. for the charger) says so.
+  - Live progress: the worker's progress data now includes the current file's fraction and the run's start time (`ProgressKeys`); `BatchScheduler.observeProgress` reads it back, and `ObserveBatchRun` combines it with item statuses and a time-left estimate from the calibrated speed.
+  - Notification deep link: tapping the batch notification opens `spacesaver://batch/{id}` (`BatchDeepLink`), limited to this package. `MainActivity` (singleTop) handles it on a cold start and when already open.
+  - Home shows a "Batch in progress" card (`ObserveRunningBatch`), and "Start batch 1" opens the progress screen.
+  - Fix: cancelling after some files converted used to mark the batch CANCELLED (a final state), stranding those outputs with no way to review them. Now such a batch goes to review, with the rest marked cancelled; a batch with no outputs is cancelled; and a batch awaiting review can't be cancelled.
+  - New design-system status `ProgressStatus.CANCELLED` ("Cancelled"); previously cancelled files read "Skipped, not enough space".
+  - Verified on the emulator: live progress, Home → notification → back to the same screen (one activity), Cancel before and after the first file converted, and the running-batch card.
 - [ ] 7.6 Batch review
 - [ ] 7.7 Settings
 - [ ] 7.8 Navigation

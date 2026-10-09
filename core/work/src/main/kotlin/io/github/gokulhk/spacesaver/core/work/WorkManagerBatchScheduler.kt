@@ -4,12 +4,16 @@ import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.await
 import androidx.work.workDataOf
+import io.github.gokulhk.spacesaver.core.domain.execution.BatchProgress
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchScheduler
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /**
@@ -44,6 +48,11 @@ class WorkManagerBatchScheduler
 
         override suspend fun isScheduled(batchId: BatchId): Boolean =
             workManager.getWorkInfosForUniqueWorkFlow(uniqueName(batchId)).first().any { !it.state.isFinished }
+
+        override fun observeProgress(batchId: BatchId): Flow<BatchProgress?> =
+            workManager.getWorkInfosForUniqueWorkFlow(uniqueName(batchId)).map { infos ->
+                infos.firstOrNull { it.state == WorkInfo.State.RUNNING }?.progress?.toBatchProgress()
+            }
 
         override suspend fun cancel(batchId: BatchId) {
             workManager.cancelUniqueWork(uniqueName(batchId)).await()

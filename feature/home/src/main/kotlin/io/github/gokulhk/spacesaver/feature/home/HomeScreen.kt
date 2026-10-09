@@ -37,6 +37,8 @@ import io.github.gokulhk.spacesaver.core.designsystem.component.SuggestionCard
 import io.github.gokulhk.spacesaver.core.designsystem.preview.PreviewLightDark
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.designsystem.theme.Spacing
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
+import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.usecase.PendingReview
 import io.github.gokulhk.spacesaver.core.domain.usecase.PlanStatus
@@ -57,6 +59,7 @@ internal const val HOME_LIST_TAG = "home_list"
  * @param onEvent receives every user action.
  * @param onReviewClick opens the review of a batch.
  * @param onOpenPlan opens Plan detail.
+ * @param onOpenBatch opens a batch's progress.
  * @param snackbarHostState shows errors.
  */
 @Composable
@@ -65,6 +68,7 @@ fun HomeScreen(
     onEvent: (HomeEvent) -> Unit,
     onReviewClick: (BatchId) -> Unit,
     onOpenPlan: () -> Unit,
+    onOpenBatch: (BatchId) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -74,8 +78,17 @@ fun HomeScreen(
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { padding ->
         when (state) {
-            HomeUiState.Loading -> LoadingContent(Modifier.padding(padding))
-            is HomeUiState.Content -> HomeContent(state, HomeActions(onEvent, onReviewClick, onOpenPlan), padding)
+            HomeUiState.Loading -> {
+                LoadingContent(Modifier.padding(padding))
+            }
+
+            is HomeUiState.Content -> {
+                HomeContent(
+                    state,
+                    HomeActions(onEvent, onReviewClick, onOpenPlan, onOpenBatch),
+                    padding,
+                )
+            }
         }
     }
     val sheet = (state as? HomeUiState.Content)?.presetSheet
@@ -108,6 +121,7 @@ private fun HomeContent(
             )
         }
         item { StorageSection(state.storage, sizes) }
+        state.runningBatch?.let { batch -> item(key = "running") { RunningBatchCard(batch, actions.onOpenBatch) } }
         items(state.pendingReviews, key = { it.batchId.value }) { PendingReviewCard(it, sizes, actions.onReviewClick) }
         item { PlanSection(state.plan, state.planExpanded, state.isStarting, onEvent) }
         if (state.plan != PlanStatus.Empty) {
@@ -124,6 +138,7 @@ private class HomeActions(
     val onEvent: (HomeEvent) -> Unit,
     val onReviewClick: (BatchId) -> Unit,
     val onOpenPlan: () -> Unit,
+    val onOpenBatch: (BatchId) -> Unit,
 )
 
 private fun LazyListScope.suggestions(
@@ -199,6 +214,31 @@ private fun PendingReviewCard(
 }
 
 @Composable
+private fun RunningBatchCard(
+    batch: Batch,
+    onOpenBatch: (BatchId) -> Unit,
+) {
+    val done = batch.items.count { it.status != ItemStatus.QUEUED && it.status != ItemStatus.CONVERTING }
+    val total = batch.items.size
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.fillMaxWidth().padding(Spacing.Large),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            Text(text = stringResource(R.string.home_running_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = pluralStringResource(R.plurals.home_running_detail, total, done, total),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = { onOpenBatch(batch.id) }, modifier = Modifier.align(Alignment.End)) {
+                Text(stringResource(R.string.home_running_action))
+            }
+        }
+    }
+}
+
+@Composable
 private fun LoadingContent(modifier: Modifier = Modifier) {
     val description = stringResource(R.string.home_loading)
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -209,11 +249,15 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
 @PreviewLightDark
 @Composable
 private fun HomeReadyPreview() {
-    SpaceSaverTheme { HomeScreen(HomePreviewData.ready, onEvent = {}, onReviewClick = {}, onOpenPlan = {}) }
+    SpaceSaverTheme {
+        HomeScreen(HomePreviewData.ready, onEvent = {}, onReviewClick = {}, onOpenPlan = {}, onOpenBatch = {})
+    }
 }
 
 @PreviewLightDark
 @Composable
 private fun HomeBlockedPreview() {
-    SpaceSaverTheme { HomeScreen(HomePreviewData.blocked, onEvent = {}, onReviewClick = {}, onOpenPlan = {}) }
+    SpaceSaverTheme {
+        HomeScreen(HomePreviewData.blocked, onEvent = {}, onReviewClick = {}, onOpenPlan = {}, onOpenBatch = {})
+    }
 }

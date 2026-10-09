@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePendingReviews
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePlan
+import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveRunningBatch
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSavingsSummary
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveStorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.StartNextBatch
@@ -32,6 +33,7 @@ import javax.inject.Inject
  * @property observeSavings the savings banner.
  * @property observeStorage the storage bar.
  * @property observePendingReviews the pending-review cards.
+ * @property observeRunningBatch the "Batch in progress" card.
  */
 class HomeOverview
     @Inject
@@ -39,6 +41,7 @@ class HomeOverview
         val observeSavings: ObserveSavingsSummary,
         val observeStorage: ObserveStorageOverview,
         val observePendingReviews: ObservePendingReviews,
+        val observeRunningBatch: ObserveRunningBatch,
     )
 
 /**
@@ -66,14 +69,15 @@ class HomeViewModel
             combine(
                 overview.observeSavings(),
                 overview.observeStorage(),
-                overview.observePendingReviews(),
+                combine(overview.observePendingReviews(), overview.observeRunningBatch(), ::Pair),
                 plan,
                 local,
-            ) { savings, storage, reviews, plan, local ->
+            ) { savings, storage, (reviews, running), plan, local ->
                 HomeUiState.Content(
                     savings = savings,
                     storage = storage,
                     pendingReviews = reviews,
+                    runningBatch = running,
                     plan = plan.status,
                     suggestions = plan.suggestions,
                     planExpanded = local.planExpanded,

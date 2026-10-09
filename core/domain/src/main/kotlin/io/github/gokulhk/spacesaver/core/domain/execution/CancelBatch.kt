@@ -4,6 +4,7 @@ import io.github.gokulhk.spacesaver.core.domain.batch.BatchEvent
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStateMachine
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemEvent
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchRepository
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchScheduler
@@ -14,8 +15,10 @@ import javax.inject.Inject
 
 /**
  * The user's Cancel on the progress screen (plan Section 7.5): stops the batch's work and marks
- * the item being converted, every item after it, and the batch as cancelled. Items already
- * converted keep their outputs for review.
+ * the item being converted and every item after it as cancelled. If some items were already
+ * converted, the batch goes to review so the user can keep or discard those outputs; otherwise
+ * the batch is cancelled. Only a planned or converting batch can be cancelled: a batch awaiting
+ * review is resolved through review, so its outputs are never stranded.
  *
  * This is separate from [BatchRunner] being stopped by the system (charger unplugged, memory
  * pressure, time limits), which leaves the batch resumable.
@@ -31,8 +34,11 @@ class CancelBatch
         suspend operator fun invoke(batchId: BatchId): DomainResult<BatchStatus> {
             val batch =
                 batchRepository.get(batchId) ?: return DomainResult.Failure(DomainError.BatchNotFound(batchId.value))
-            val cancelled = stateMachine.transition(batch.status, BatchEvent.Cancel)
-            if (cancelled is DomainResult.Failure) return cancelled
+            if (batch.status != BatchStatus.PLANNED && batch.status != BatchStatus.CONVERTING) {
+                return DomainResult.Failure(
+                    DomainError.InvalidTransition(batch.status.name, BatchEvent.Cancel.toString()),
+                )
+            }
             scheduler.cancel(batchId)
             batch.items.forEach { item ->
                 stateMachine
@@ -42,7 +48,9 @@ class CancelBatch
                     ).getOrNull()
                     ?.let { batchRepository.updateItem(item.id, it) }
             }
-            batchRepository.updateBatchStatus(batchId, BatchStatus.CANCELLED)
-            return cancelled
+            val hasOutputs = batch.items.any { it.status == ItemStatus.CONVERTED }
+            val status = if (hasOutputs) BatchStatus.AWAITING_REVIEW else BatchStatus.CANCELLED
+            batchRepository.updateBatchStatus(batchId, status)
+            return DomainResult.Success(status)
         }
     }

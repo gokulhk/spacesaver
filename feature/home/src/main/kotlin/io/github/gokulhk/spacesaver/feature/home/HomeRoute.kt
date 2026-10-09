@@ -23,13 +23,13 @@ import io.github.gokulhk.spacesaver.core.ui.rememberSizeTextFormatter
  * caller. Before a batch starts it asks for the notification permission if it's missing, so the
  * batch's progress notification can be shown; the batch starts whatever the answer.
  *
- * @param onBatchStart called with a newly started batch, to show its progress.
+ * @param onOpenBatch shows a batch's progress: one just started, or the running one.
  * @param onReviewClick opens the review of a batch.
  * @param onOpenPlan opens Plan detail.
  */
 @Composable
 fun HomeRoute(
-    onBatchStart: (BatchId) -> Unit,
+    onOpenBatch: (BatchId) -> Unit,
     onReviewClick: (BatchId) -> Unit,
     onOpenPlan: () -> Unit,
     modifier: Modifier = Modifier,
@@ -39,13 +39,13 @@ fun HomeRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
     val sizes = rememberSizeTextFormatter()
-    val currentOnBatchStart by rememberUpdatedState(onBatchStart)
+    val currentOnOpenBatch by rememberUpdatedState(onOpenBatch)
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 is HomeEffect.BatchStarted -> {
-                    currentOnBatchStart(effect.batchId)
+                    currentOnOpenBatch(effect.batchId)
                 }
 
                 is HomeEffect.ShowError -> {
@@ -72,6 +72,7 @@ fun HomeRoute(
         },
         onReviewClick = onReviewClick,
         onOpenPlan = onOpenPlan,
+        onOpenBatch = onOpenBatch,
         modifier = modifier,
         snackbarHostState = snackbarHostState,
     )

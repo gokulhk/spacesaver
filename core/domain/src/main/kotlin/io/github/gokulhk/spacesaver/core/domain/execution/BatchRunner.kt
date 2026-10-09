@@ -12,6 +12,8 @@ import io.github.gokulhk.spacesaver.core.domain.repository.BatchRepository
 import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
 import io.github.gokulhk.spacesaver.core.domain.result.getOrNull
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 
 /**
@@ -21,12 +23,14 @@ import javax.inject.Inject
  * @property totalItems items in the batch.
  * @property currentItemFraction progress of the item being converted, 0 to 1.
  * @property currentItemName the file being converted, or null when none is.
+ * @property startedAt when this run began; a run resumed after an interruption starts again.
  */
 data class BatchProgress(
     val completedItems: Int,
     val totalItems: Int,
     val currentItemFraction: Float,
     val currentItemName: String?,
+    val startedAt: Instant,
 ) {
     /** Overall progress from 0 to 1. */
     val overall: Float get() = if (totalItems == 0) 1f else (completedItems + currentItemFraction) / totalItems
@@ -48,6 +52,7 @@ class BatchRunner
         private val batchRepository: BatchRepository,
         private val convertItem: ConvertBatchItem,
         private val stateMachine: BatchStateMachine,
+        private val clock: Clock,
     ) {
         /** Runs [batchId], reporting [onProgress]; cancelling the caller cancels the batch. */
         suspend fun run(
@@ -61,6 +66,7 @@ class BatchRunner
             ) {
                 return DomainResult.Success(batch.status)
             }
+            val startedAt = clock.instant()
             if (batch.status == BatchStatus.PLANNED) setBatch(batch, BatchEvent.StartConversion)
             val items = batch.items.map { if (it.status == ItemStatus.CONVERTING) resetInterrupted(it) else it }
             val queue = items.filter { it.status == ItemStatus.QUEUED }
@@ -68,11 +74,15 @@ class BatchRunner
             for (item in queue) {
                 process(
                     item,
-                ) { fraction -> onProgress(BatchProgress(completed, items.size, fraction, item.original.displayName)) }
+                ) { fraction ->
+                    onProgress(
+                        BatchProgress(completed, items.size, fraction, item.original.displayName, startedAt),
+                    )
+                }
                 completed++
             }
             setBatch(batch.copy(status = BatchStatus.CONVERTING), BatchEvent.ConversionFinished)
-            onProgress(BatchProgress(items.size, items.size, 0f, null))
+            onProgress(BatchProgress(items.size, items.size, 0f, null, startedAt))
             return DomainResult.Success(BatchStatus.AWAITING_REVIEW)
         }
 

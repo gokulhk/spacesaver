@@ -24,6 +24,9 @@ class HomeScreenshotTest {
     fun planExpanded() = snapshot("Home_plan_expanded", HomePreviewData.ready.copy(planExpanded = true))
 
     @Test
+    fun running() = snapshot("Home_running", HomePreviewData.running)
+
+    @Test
     fun blocked() = snapshot("Home_blocked", HomePreviewData.blocked)
 
     @Test
@@ -43,6 +46,6 @@ class HomeScreenshotTest {
         name: String,
         state: HomeUiState,
     ) = composeRule.captureScreenLightDark(name) {
-        HomeScreen(state = state, onEvent = {}, onReviewClick = {}, onOpenPlan = {})
+        HomeScreen(state = state, onEvent = {}, onReviewClick = {}, onOpenPlan = {}, onOpenBatch = {})
     }
 }

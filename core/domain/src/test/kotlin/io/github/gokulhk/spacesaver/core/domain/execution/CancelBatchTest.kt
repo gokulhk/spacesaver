@@ -26,7 +26,7 @@ class CancelBatchTest {
         }
 
     @Test
-    fun `cancelling stops the work and marks the running and remaining items and the batch`() =
+    fun `cancelling after some files converted stops the work and sends those files to review`() =
         runTest {
             val batch = batches.create(photos)
             scheduler.enqueue(batch.id, chargingOnly = false)
@@ -37,13 +37,40 @@ class CancelBatchTest {
 
             val result = cancel(batch.id)
 
-            assertThat(result).isEqualTo(DomainResult.Success(BatchStatus.CANCELLED))
+            assertThat(result).isEqualTo(DomainResult.Success(BatchStatus.AWAITING_REVIEW))
             assertThat(scheduler.cancelled).containsExactly(batch.id)
             val stored = batches.get(batch.id)!!
-            assertThat(stored.status).isEqualTo(BatchStatus.CANCELLED)
+            assertThat(stored.status).isEqualTo(BatchStatus.AWAITING_REVIEW)
             assertThat(stored.items.map { it.status })
                 .containsExactly(ItemStatus.CONVERTED, ItemStatus.CANCELLED, ItemStatus.CANCELLED)
                 .inOrder()
+        }
+
+    @Test
+    fun `cancelling before anything converted cancels the batch`() =
+        runTest {
+            val batch = batches.create(photos)
+            batches.updateBatchStatus(batch.id, BatchStatus.CONVERTING)
+            batches.updateItem(batch.items[0].id, ItemStatus.CONVERTING)
+
+            assertThat(cancel(batch.id)).isEqualTo(DomainResult.Success(BatchStatus.CANCELLED))
+            assertThat(
+                batches
+                    .get(batch.id)!!
+                    .items
+                    .map { it.status }
+                    .distinct(),
+            ).containsExactly(ItemStatus.CANCELLED)
+        }
+
+    @Test
+    fun `a batch awaiting review cannot be cancelled, so its outputs stay reviewable`() =
+        runTest {
+            val batch = batches.create(photos)
+            batches.updateBatchStatus(batch.id, BatchStatus.AWAITING_REVIEW)
+
+            assertThat(cancel(batch.id).errorOrNull()).isInstanceOf(DomainError.InvalidTransition::class.java)
+            assertThat(batches.get(batch.id)!!.status).isEqualTo(BatchStatus.AWAITING_REVIEW)
         }
 
     @Test

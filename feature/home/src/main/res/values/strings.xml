@@ -26,6 +26,15 @@
     <string name="home_empty_title">Nothing to compress right now</string>
     <string name="home_empty_message">Photos and videos that can be made smaller will show up here.</string>
 
+    <!-- Running batch -->
+    <string name="home_running_title">Batch in progress</string>
+    <!-- %1$d files done of %2$d. -->
+    <plurals name="home_running_detail">
+        <item quantity="one">%1$d of %2$d file done</item>
+        <item quantity="other">%1$d of %2$d files done</item>
+    </plurals>
+    <string name="home_running_action">View progress</string>
+
     <!-- Pending review -->
     <plurals name="home_review_title">
         <item quantity="one">%d item ready for review</item>

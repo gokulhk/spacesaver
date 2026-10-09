@@ -44,6 +44,7 @@
     <string name="progress_status_done">Done</string>
     <string name="progress_status_failed">Failed</string>
     <string name="progress_status_skipped">Skipped, not enough space</string>
+    <string name="progress_status_cancelled">Cancelled</string>
     <!-- %1$s = status, %2$s = extra detail such as "Saved 820 MB". -->
     <string name="progress_status_with_detail">%1$s · %2$s</string>
 </resources>
