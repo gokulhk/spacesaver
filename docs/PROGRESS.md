@@ -175,7 +175,12 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
   - Opened from the progress screen's Review button and Home's pending-review cards; continuing goes to the next batch's progress, finishing returns Home.
   - Fixes found while testing: (1) originals kept with "Keep both" were suggested again, so "& continue" would convert them again at once; kept originals are now excluded (`BatchRepository.observeKeptOriginals`, replacing `unfinishedBatches`). (2) Originals deleted outside the app since conversion stayed in the review and would have been counted as savings a second time; they are now left out of the review, left out of the delete dialog, and finalized without savings (`DeletionGateway.existing`).
   - Verified on the emulator: a real review with thumbnails, video frame and full-resolution photo comparison, rejecting a file, declining then allowing the system dialog (originals deleted, rejected output discarded, savings +54.4 MB), and a review whose video originals were already gone.
-- [ ] 7.7 Settings
+- [x] 7.7 Settings
+  - Screen (`:feature:settings`): Theme (System/Light/Dark), Photo format (HEIC/WebP; HEIC disabled with an explanation when the phone can't encode it), Free-space reserve (Default for this phone, or 1/2/5/10 GB, with an explanation), Only while charging (applies to batches started afterwards), the privacy statement ("no internet permission"), the version, and an open-source licenses page bundled with the app (library list plus the Apache License 2.0 text from `res/raw`).
+  - Domain: `ObserveSettingsOverview` (settings + default reserve + HEIC support), `UpdateSettings`, `ObserveThemeMode`; `ReservePolicy.USER_CHOICES`.
+  - The theme applies app-wide at once: `MainActivity` follows `MainViewModel.themeMode` through `AppTheme`, which draws nothing until the setting is read so a saved dark theme never flashes light (`AppThemeTest`).
+  - Settings joined the bottom bar; the selected tab now lives in `SpaceSaverApp`, so returning from a screen opened on top (licenses, plan detail, progress, review) keeps the tab.
+  - Verified on the emulator: dark theme applied to every screen at once and persisted across a restart; HEIC disabled with its explanation; licenses page; back from licenses returns to Settings.
 - [ ] 7.8 Navigation
 
 ## Phase 8 — Hardening

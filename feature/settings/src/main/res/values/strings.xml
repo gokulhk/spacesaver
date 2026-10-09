@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_loading">Loading settings</string>
+
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_compression">Compression</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_section_about">About</string>
+
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+
+    <string name="settings_photo_format">Photo format</string>
+    <string name="settings_format_heic">HEIC</string>
+    <string name="settings_format_heic_note">Smallest files. Some older apps can\'t open it.</string>
+    <string name="settings_format_webp">WebP</string>
+    <string name="settings_format_webp_note">A little larger. Opens almost everywhere.</string>
+    <string name="settings_format_no_heic">This phone can\'t save HEIC, so photos are saved as WebP.</string>
+    <string name="settings_format_webp_fallback">WebP (this phone can\'t save HEIC)</string>
+
+    <string name="settings_reserve">Free-space reserve</string>
+    <string name="settings_reserve_explanation">SpaceSaver always leaves this much space free, so your phone keeps working while it converts.</string>
+    <string name="settings_reserve_default">Default (%s)</string>
+
+    <string name="settings_charging_only">Only while charging</string>
+    <string name="settings_charging_only_detail">Applies to batches you start next.</string>
+
+    <string name="settings_privacy_statement">SpaceSaver has no internet permission. Your photos and videos never leave your phone, and nothing is deleted without your OK.</string>
+    <string name="settings_privacy_check">You can check this in your phone\'s Settings, under Apps, SpaceSaver, Permissions.</string>
+
+    <string name="settings_version">Version %s</string>
+    <string name="settings_licenses">Open-source licenses</string>
+    <string name="settings_cancel">Cancel</string>
+
+    <string name="licenses_title">Open-source licenses</string>
+    <string name="licenses_back">Back</string>
+    <string name="licenses_intro">SpaceSaver is open source under the Apache License 2.0 and is built with these libraries, all under the same license:</string>
+    <string-array name="licenses_libraries" translatable="false">
+        <item>AndroidX: Activity, Compose, Core, DataStore, ExifInterface, HeifWriter, Hilt, Lifecycle, Navigation, Paging, Room, WorkManager</item>
+        <item>AndroidX Media3: Transformer, Effect, Muxer</item>
+        <item>Material Components for Compose and Material Icons</item>
+        <item>Dagger and Hilt</item>
+        <item>Kotlin standard library and kotlinx.coroutines</item>
+    </string-array>
+</resources>

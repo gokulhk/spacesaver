@@ -1,5 +1,6 @@
 package io.github.gokulhk.spacesaver.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -28,21 +29,22 @@ import io.github.gokulhk.spacesaver.feature.browse.BrowseRoute
 import io.github.gokulhk.spacesaver.feature.home.HomeRoute
 import io.github.gokulhk.spacesaver.feature.home.PlanDetailRoute
 import io.github.gokulhk.spacesaver.feature.onboarding.OnboardingRoute
+import io.github.gokulhk.spacesaver.feature.settings.LicensesScreen
+import io.github.gokulhk.spacesaver.feature.settings.SettingsRoute
 
-/** Top-level destinations in the bottom bar. Settings joins in 7.7. */
+/** Top-level destinations in the bottom bar. */
 private enum class TopLevel(
     @StringRes val label: Int,
     val icon: ImageVector,
 ) {
     HOME(R.string.nav_home, SpaceSaverIcons.Savings),
     BROWSE(R.string.nav_browse, SpaceSaverIcons.MediaLibrary),
+    SETTINGS(R.string.nav_settings, SpaceSaverIcons.Settings),
 }
 
 /**
- * The app's screens: onboarding until media can be read, then Home and Browse in a bottom bar,
- * with Plan detail, batch progress, and batch review opened on top.
- * Task 7.8 replaces this with type-safe navigation, back-stack handling, and deep links; until
- * then starting a batch and opening a review stay on Home.
+ * The app's screens: onboarding until media can be read, then Home, Browse, and Settings in a
+ * bottom bar, with Plan detail, batch progress, batch review, and licenses opened on top.
  *
  * @param canReadMedia whether media access was already granted when the app started.
  * @param deepLinkBatch a batch to open from its notification, if any.
@@ -59,6 +61,9 @@ fun SpaceSaverApp(
     var showPlan by rememberSaveable { mutableStateOf(false) }
     var openBatch by rememberSaveable { mutableStateOf<Long?>(null) }
     var openReview by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showLicenses by rememberSaveable { mutableStateOf(false) }
+    // Kept here, not in the tabs, so returning from a screen opened on top restores the same tab.
+    var currentTab by rememberSaveable { mutableStateOf(TopLevel.HOME) }
     val currentOnDeepLinkOpen by rememberUpdatedState(onDeepLinkOpen)
     LaunchedEffect(deepLinkBatch) {
         if (deepLinkBatch != null) {
@@ -101,11 +106,19 @@ fun SpaceSaverApp(
             PlanDetailRoute(onBack = { showPlan = false }, modifier = modifier)
         }
 
+        showLicenses -> {
+            BackHandler { showLicenses = false }
+            LicensesScreen(onBack = { showLicenses = false }, modifier = modifier)
+        }
+
         else -> {
             TopLevelTabs(
+                current = currentTab,
+                onSelect = { currentTab = it },
                 onOpenPlan = { showPlan = true },
                 onOpenBatch = { openBatch = it.value },
                 onOpenReview = { openReview = it.value },
+                onOpenLicenses = { showLicenses = true },
                 modifier = modifier,
             )
         }
@@ -114,12 +127,14 @@ fun SpaceSaverApp(
 
 @Composable
 private fun TopLevelTabs(
+    current: TopLevel,
+    onSelect: (TopLevel) -> Unit,
     onOpenPlan: () -> Unit,
     onOpenBatch: (BatchId) -> Unit,
     onOpenReview: (BatchId) -> Unit,
+    onOpenLicenses: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var current by rememberSaveable { mutableStateOf(TopLevel.HOME) }
     Scaffold(
         modifier = modifier,
         bottomBar = {
@@ -127,7 +142,7 @@ private fun TopLevelTabs(
                 TopLevel.entries.forEach { destination ->
                     NavigationBarItem(
                         selected = current == destination,
-                        onClick = { current = destination },
+                        onClick = { onSelect(destination) },
                         icon = { Icon(destination.icon, contentDescription = null) },
                         label = { Text(stringResource(destination.label)) },
                     )
@@ -147,6 +162,10 @@ private fun TopLevelTabs(
 
                 TopLevel.BROWSE -> {
                     BrowseRoute()
+                }
+
+                TopLevel.SETTINGS -> {
+                    SettingsRoute(onOpenLicenses = onOpenLicenses)
                 }
             }
         }

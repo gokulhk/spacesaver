@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Tune
@@ -88,6 +89,9 @@ object SpaceSaverIcons {
 
     /** Go back to the previous screen; mirrored in right-to-left layouts. */
     val Back: ImageVector = Icons.AutoMirrored.Rounded.ArrowBack
+
+    /** The Settings destination. */
+    val Settings: ImageVector = Icons.Rounded.Settings
 
     /** Close or leave a mode, e.g. selection. */
     val Close: ImageVector = Icons.Rounded.Close

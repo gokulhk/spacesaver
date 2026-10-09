@@ -3,4 +3,5 @@
     <string name="app_name" translatable="false">SpaceSaver</string>
     <string name="nav_home">Home</string>
     <string name="nav_browse">Browse</string>
+    <string name="nav_settings">Settings</string>
 </resources>

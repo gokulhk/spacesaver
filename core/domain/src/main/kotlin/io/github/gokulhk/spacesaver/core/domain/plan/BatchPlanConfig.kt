@@ -44,6 +44,9 @@ object ReservePolicy {
     /** Lowest reserve a user may choose in Settings. */
     val MIN_USER_RESERVE: ByteSize = ByteSize.megabytes(500)
 
+    /** Reserves offered in Settings, besides the default. */
+    val USER_CHOICES: List<ByteSize> = listOf(1L, 2L, 5L, 10L).map(ByteSize::gigabytes)
+
     /** Share of total storage kept free by default; Android itself warns at around 5–10%. */
     private const val DEFAULT_RESERVE_SHARE = 0.05
 

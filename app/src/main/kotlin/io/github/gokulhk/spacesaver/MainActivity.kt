@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,6 +16,7 @@ import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.ui.permission.canReadMedia
 import io.github.gokulhk.spacesaver.core.work.BatchDeepLink
 import io.github.gokulhk.spacesaver.deletion.DeletionRequestHost
+import io.github.gokulhk.spacesaver.navigation.AppTheme
 import io.github.gokulhk.spacesaver.navigation.SpaceSaverApp
 import javax.inject.Inject
 
@@ -23,13 +25,15 @@ import javax.inject.Inject
  * bar icon colors.
  *
  * Starts on onboarding until media access is granted, then home (see [SpaceSaverApp]). A batch
- * notification opens the batch's progress, whether the app was closed or already open. Task 7.7
- * makes the theme follow Settings.
+ * notification opens the batch's progress, whether the app was closed or already open. The theme
+ * follows Settings and changes everywhere at once.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     /** System delete dialogs requested by the domain. */
     @Inject lateinit var deletionRequests: DeletionRequests
+
+    private val mainViewModel: MainViewModel by viewModels()
 
     /** A batch to open from a notification, until the UI has shown it. */
     private var deepLinkBatch by mutableStateOf<BatchId?>(null)
@@ -40,7 +44,7 @@ class MainActivity : ComponentActivity() {
         // Only a fresh launch follows the link; after rotation the UI already shows it.
         if (savedInstanceState == null) deepLinkBatch = BatchDeepLink.parse(intent?.dataString)
         setContent {
-            SpaceSaverTheme {
+            AppTheme(mainViewModel.themeMode) {
                 DeletionRequestHost(deletionRequests)
                 SpaceSaverApp(
                     canReadMedia = canReadMedia(),
