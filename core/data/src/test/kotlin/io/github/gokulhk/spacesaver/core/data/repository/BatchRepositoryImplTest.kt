@@ -21,6 +21,7 @@ import io.github.gokulhk.spacesaver.core.model.MediaType
 import io.github.gokulhk.spacesaver.core.model.VideoPreset
 import io.github.gokulhk.spacesaver.core.testing.TestClock
 import io.github.gokulhk.spacesaver.core.testing.aCandidate
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -188,15 +189,13 @@ class BatchRepositoryImplTest {
         }
 
     @Test
-    fun `unfinished batches are those planned or converting`() =
+    fun `originals kept next to their compressed copy are observed`() =
         runTest {
-            val planned = repository.create(listOf(image))
-            val converting = repository.create(listOf(video))
-            val reviewing = repository.create(listOf(image))
-            repository.updateBatchStatus(converting.id, BatchStatus.CONVERTING)
-            repository.updateBatchStatus(reviewing.id, BatchStatus.AWAITING_REVIEW)
+            val batch = repository.create(listOf(video, image))
+            repository.updateItem(batch.items[0].id, ItemStatus.KEPT_BOTH)
+            repository.updateItem(batch.items[1].id, ItemStatus.ORIGINAL_DELETED)
 
-            assertThat(repository.unfinishedBatches().map { it.id }).containsExactly(planned.id, converting.id)
+            assertThat(repository.observeKeptOriginals().first()).containsExactly(video.item.id)
         }
 
     @Test

@@ -167,13 +167,20 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
   - Fix: cancelling after some files converted used to mark the batch CANCELLED (a final state), stranding those outputs with no way to review them. Now such a batch goes to review, with the rest marked cancelled; a batch with no outputs is cancelled; and a batch awaiting review can't be cancelled.
   - New design-system status `ProgressStatus.CANCELLED` ("Cancelled"); previously cancelled files read "Skipped, not enough space".
   - Verified on the emulator: live progress, Home → notification → back to the same screen (one activity), Cancel before and after the first file converted, and the running-batch card.
-- [ ] 7.6 Batch review
+- [x] 7.6 Batch review
+  - Screen (`:feature:batch`): each converted file with original → compressed size and its saving, a keep switch (on by default, saved as you toggle via `SetItemAccepted`), and the footer "Accepting 3 of 4 · frees 2.6 GB" with "Delete N originals permanently & continue", "Keep both & continue" (only while the next batch fits, with a note that it will be smaller), and "Stop here". With every file switched off the primary action reads "Discard all & continue".
+  - Before/after viewer: photos as the centre crop at full resolution (one image pixel per screen pixel), videos as frames at a quarter, half, and three quarters through; both with the design-system slider. The drag band around the handle is excluded from the system back gesture.
+  - `ObserveBatchReview` (decisions + available actions + remaining plan) and `CompleteReview` (applies the action, then starts the next batch, or finishes, or reports a cancelled delete dialog).
+  - A cancelled system delete dialog keeps the review open with "Nothing was deleted. Your files are still here."
+  - Opened from the progress screen's Review button and Home's pending-review cards; continuing goes to the next batch's progress, finishing returns Home.
+  - Fixes found while testing: (1) originals kept with "Keep both" were suggested again, so "& continue" would convert them again at once; kept originals are now excluded (`BatchRepository.observeKeptOriginals`, replacing `unfinishedBatches`). (2) Originals deleted outside the app since conversion stayed in the review and would have been counted as savings a second time; they are now left out of the review, left out of the delete dialog, and finalized without savings (`DeletionGateway.existing`).
+  - Verified on the emulator: a real review with thumbnails, video frame and full-resolution photo comparison, rejecting a file, declining then allowing the system dialog (originals deleted, rejected output discarded, savings +54.4 MB), and a review whose video originals were already gone.
 - [ ] 7.7 Settings
 - [ ] 7.8 Navigation
 
 ## Phase 8 — Hardening
 
-- [ ] 8.0 Test hygiene: instrumented tests leave empty `DCIM/SpaceSaverTest*` folders on the device (200+ on the test AVD); clean them up in teardown and delete the existing ones
+- [ ] 8.0 Test hygiene: instrumented tests leave empty `DCIM/SpaceSaverTest*` folders on the device (200+ on the test AVD); clean them up in teardown and delete the existing ones. Also check orphan cleanup: a 0-byte `photo2_compressed.webp` was left on the test AVD after a cancelled batch
 - [ ] 8.1 Performance
 - [ ] 8.2 Privacy guard
 - [ ] 8.3 Accessibility pass

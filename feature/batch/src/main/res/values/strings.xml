@@ -40,4 +40,42 @@
 
     <string name="batch_not_found_title">This batch no longer exists</string>
     <string name="batch_not_found_message">It may have been reviewed or cleared already.</string>
+
+    <!-- Review -->
+    <string name="review_title">Review batch</string>
+    <plurals name="review_header">
+        <item quantity="one">%d file converted</item>
+        <item quantity="other">%d files converted</item>
+    </plurals>
+    <string name="review_instructions">Tap a file to compare it with the original. Turn off any you\'d rather not keep.</string>
+    <!-- %1$s: original size, %2$s: compressed size. -->
+    <string name="review_sizes">%1$s → %2$s</string>
+    <string name="review_saves">Saves %s</string>
+    <string name="review_keeps_original">Keeps the original</string>
+    <string name="review_keep_switch">Keep compressed version</string>
+    <!-- %1$d kept of %2$d, %3$s: space freed. -->
+    <plurals name="review_summary">
+        <item quantity="one">Accepting %1$d of %2$d · frees %3$s</item>
+        <item quantity="other">Accepting %1$d of %2$d · frees %3$s</item>
+    </plurals>
+    <plurals name="review_delete_originals">
+        <item quantity="one">Delete %d original permanently &amp; continue</item>
+        <item quantity="other">Delete %d originals permanently &amp; continue</item>
+    </plurals>
+    <string name="review_discard_all">Discard all &amp; continue</string>
+    <string name="review_keep_both">Keep both &amp; continue</string>
+    <string name="review_keep_both_note">Frees nothing now, so the next batch will be smaller.</string>
+    <string name="review_stop_here">Stop here</string>
+    <string name="review_nothing_deleted">Nothing was deleted. Your files are still here.</string>
+    <string name="review_already_reviewed">This batch has already been reviewed</string>
+    <string name="review_already_reviewed_message">Its files were kept or deleted as you chose.</string>
+
+    <!-- Comparison -->
+    <string name="compare_close">Close comparison</string>
+    <string name="compare_original">Original · %s</string>
+    <string name="compare_compressed">Compressed · %s</string>
+    <string name="compare_loading">Loading preview</string>
+    <string name="compare_full_resolution">Centre of the photo at full resolution. Drag to compare.</string>
+    <string name="compare_frames">Drag to compare. Frames at a quarter, half, and three quarters through.</string>
+    <string name="compare_frame_at">%s</string>
 </resources>

@@ -41,7 +41,10 @@ class ReconcileBatches
     ) {
         /** Reconciles and reports what changed. */
         suspend operator fun invoke(): ReconcileReport {
-            val unfinished = batchRepository.unfinishedBatches()
+            val unfinished =
+                batchRepository.observeActiveBatches().first().filter {
+                    it.status == BatchStatus.PLANNED || it.status == BatchStatus.CONVERTING
+                }
             val idle = unfinished.filterNot { scheduler.isScheduled(it.id) }
             val orphansDeleted = if (idle.size == unfinished.size) deleteOrphans() else 0
             val chargingOnly = settingsRepository.settings.first().chargingOnly

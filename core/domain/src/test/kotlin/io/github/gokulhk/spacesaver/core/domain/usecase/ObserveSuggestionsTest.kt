@@ -2,6 +2,8 @@ package io.github.gokulhk.spacesaver.core.domain.usecase
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.eligibility.ImageEligibility
 import io.github.gokulhk.spacesaver.core.domain.eligibility.MediaEligibility
@@ -69,6 +71,29 @@ class ObserveSuggestionsTest {
                 assertThat(suggestion.candidates).hasSize(3)
                 assertThat(suggestion.totalSavings).isEqualTo(suggestion.candidates.sumOfSize { it.estimatedSavings })
             }
+        }
+
+    @Test
+    fun `originals kept next to their compressed copy are not suggested again`() =
+        runTest {
+            val videos = (1L..3L).map { aVideo(id = it, height = 2160) }
+            val batch =
+                batches.create(
+                    listOf(
+                        aCandidate(
+                            id = 3,
+                            original = ByteSize.megabytes(400),
+                            output = ByteSize.megabytes(60),
+                            type = MediaType.VIDEO,
+                        ),
+                    ),
+                )
+            batches.updateItem(batch.items.single().id, ItemStatus.KEPT_BOTH)
+            batches.updateBatchStatus(batch.id, BatchStatus.COMPLETED)
+
+            val suggestion = observe(videos)().first().single()
+
+            assertThat(suggestion.candidates.map { it.item.id }).containsExactly(MediaId(1), MediaId(2))
         }
 
     @Test

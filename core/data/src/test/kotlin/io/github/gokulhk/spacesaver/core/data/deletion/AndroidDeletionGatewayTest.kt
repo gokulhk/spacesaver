@@ -70,6 +70,19 @@ class AndroidDeletionGatewayTest {
         }
 
     @Test
+    fun `only files still in the media library are reported as existing`() =
+        runTest {
+            resolver.insertMedia(FakeMediaStoreProvider.IMAGES, id = 1, size = 100)
+
+            val existing =
+                gateway.existing(
+                    listOf("content://media/external/images/media/1", "content://media/external/images/media/2"),
+                )
+
+            assertThat(existing).containsExactly("content://media/external/images/media/1")
+        }
+
+    @Test
     fun `own files are deleted directly without a dialog`() =
         runTest {
             resolver.insertMedia(FakeMediaStoreProvider.IMAGES, id = 1, size = 100)

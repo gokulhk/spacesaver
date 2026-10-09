@@ -23,6 +23,7 @@ import io.github.gokulhk.spacesaver.R
 import io.github.gokulhk.spacesaver.core.designsystem.icon.SpaceSaverIcons
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.feature.batch.BatchProgressRoute
+import io.github.gokulhk.spacesaver.feature.batch.ReviewRoute
 import io.github.gokulhk.spacesaver.feature.browse.BrowseRoute
 import io.github.gokulhk.spacesaver.feature.home.HomeRoute
 import io.github.gokulhk.spacesaver.feature.home.PlanDetailRoute
@@ -39,7 +40,7 @@ private enum class TopLevel(
 
 /**
  * The app's screens: onboarding until media can be read, then Home and Browse in a bottom bar,
- * with Plan detail and batch progress opened on top.
+ * with Plan detail, batch progress, and batch review opened on top.
  * Task 7.8 replaces this with type-safe navigation, back-stack handling, and deep links; until
  * then starting a batch and opening a review stay on Home.
  *
@@ -57,6 +58,7 @@ fun SpaceSaverApp(
     var onboarded by rememberSaveable { mutableStateOf(canReadMedia) }
     var showPlan by rememberSaveable { mutableStateOf(false) }
     var openBatch by rememberSaveable { mutableStateOf<Long?>(null) }
+    var openReview by rememberSaveable { mutableStateOf<Long?>(null) }
     val currentOnDeepLinkOpen by rememberUpdatedState(onDeepLinkOpen)
     LaunchedEffect(deepLinkBatch) {
         if (deepLinkBatch != null) {
@@ -65,16 +67,31 @@ fun SpaceSaverApp(
         }
     }
     val batch = openBatch
+    val review = openReview
     when {
         !onboarded -> {
             OnboardingRoute(onFinish = { onboarded = true }, modifier = modifier)
         }
 
+        review != null -> {
+            ReviewRoute(
+                batchId = BatchId(review),
+                onNextBatch = {
+                    openReview = null
+                    openBatch = it.value
+                },
+                onClose = { openReview = null },
+                modifier = modifier,
+            )
+        }
+
         batch != null -> {
-            // Review arrives in 7.6; until then the Review button returns to Home.
             BatchProgressRoute(
                 batchId = BatchId(batch),
-                onReview = { openBatch = null },
+                onReview = {
+                    openBatch = null
+                    openReview = it.value
+                },
                 onBack = { openBatch = null },
                 modifier = modifier,
             )
@@ -85,7 +102,12 @@ fun SpaceSaverApp(
         }
 
         else -> {
-            TopLevelTabs(onOpenPlan = { showPlan = true }, onOpenBatch = { openBatch = it.value }, modifier = modifier)
+            TopLevelTabs(
+                onOpenPlan = { showPlan = true },
+                onOpenBatch = { openBatch = it.value },
+                onOpenReview = { openReview = it.value },
+                modifier = modifier,
+            )
         }
     }
 }
@@ -94,6 +116,7 @@ fun SpaceSaverApp(
 private fun TopLevelTabs(
     onOpenPlan: () -> Unit,
     onOpenBatch: (BatchId) -> Unit,
+    onOpenReview: (BatchId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var current by rememberSaveable { mutableStateOf(TopLevel.HOME) }
@@ -114,8 +137,17 @@ private fun TopLevelTabs(
     ) { padding ->
         Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
             when (current) {
-                TopLevel.HOME -> HomeRoute(onOpenBatch = onOpenBatch, onReviewClick = {}, onOpenPlan = onOpenPlan)
-                TopLevel.BROWSE -> BrowseRoute()
+                TopLevel.HOME -> {
+                    HomeRoute(
+                        onOpenBatch = onOpenBatch,
+                        onReviewClick = onOpenReview,
+                        onOpenPlan = onOpenPlan,
+                    )
+                }
+
+                TopLevel.BROWSE -> {
+                    BrowseRoute()
+                }
             }
         }
     }

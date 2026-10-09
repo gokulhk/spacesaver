@@ -20,6 +20,7 @@ import io.github.gokulhk.spacesaver.core.domain.repository.PublishedOutput
 import io.github.gokulhk.spacesaver.core.domain.repository.ReviewUpdate
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
+import io.github.gokulhk.spacesaver.core.model.MediaId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.Clock
@@ -78,8 +79,8 @@ class BatchRepositoryImpl
             outputSize: ByteSize?,
         ) = batchDao.updateItem(id.value, status.name, outputUri, outputSize?.bytes)
 
-        override suspend fun unfinishedBatches(): List<Batch> =
-            batchDao.getBatchesWithStatuses(UNFINISHED.map { it.name }).map { it.toDomain() }
+        override fun observeKeptOriginals(): Flow<Set<MediaId>> =
+            batchDao.observeMediaIdsWithItemStatus(ItemStatus.KEPT_BOTH.name).map { ids -> ids.map(::MediaId).toSet() }
 
         override suspend fun referencedOutputUris(): Set<String> = batchDao.outputUris().toSet()
 
@@ -100,8 +101,6 @@ class BatchRepositoryImpl
         )
 
         private companion object {
-            val UNFINISHED = listOf(BatchStatus.PLANNED, BatchStatus.CONVERTING)
-
             /** Statuses of batches that haven't finished. */
             val ACTIVE_STATUSES = BatchStatus.entries.filter { it.isActive }.map { it.name }
         }

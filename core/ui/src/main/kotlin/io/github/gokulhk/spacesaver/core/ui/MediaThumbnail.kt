@@ -64,6 +64,9 @@ private fun rememberThumbnail(uri: String): ImageBitmap? {
                         ).asImageBitmap()
                 } catch (_: IOException) {
                     null
+                } catch (_: IllegalArgumentException) {
+                    // The file no longer exists (deleted outside the app).
+                    null
                 }
             }
     }

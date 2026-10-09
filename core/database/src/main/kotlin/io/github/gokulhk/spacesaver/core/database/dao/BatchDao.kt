@@ -57,10 +57,9 @@ abstract class BatchDao {
         outputSizeBytes: Long?,
     )
 
-    /** Batches in any of [statuses], oldest first. */
-    @Transaction
-    @Query("SELECT * FROM batches WHERE status IN (:statuses) ORDER BY created_at_millis, id")
-    abstract suspend fun getBatchesWithStatuses(statuses: List<String>): List<BatchWithItems>
+    /** Media IDs of items with [status], across all batches, re-emitted on change. */
+    @Query("SELECT DISTINCT media_id FROM batch_items WHERE status = :status")
+    abstract fun observeMediaIdsWithItemStatus(status: String): Flow<List<Long>>
 
     /** Every recorded output URI. */
     @Query("SELECT output_uri FROM batch_items WHERE output_uri IS NOT NULL")

@@ -34,6 +34,9 @@ interface DeletionGateway {
 
     /** Deletes files SpaceSaver wrote (e.g. rejected outputs); no consent dialog is needed. */
     suspend fun deleteOwnFiles(uris: List<String>)
+
+    /** Which of [uris] still exist, e.g. originals not deleted elsewhere since they were converted. */
+    suspend fun existing(uris: List<String>): Set<String>
 }
 
 /** Port: what the device's encoders can do (plan Task 4.2). */

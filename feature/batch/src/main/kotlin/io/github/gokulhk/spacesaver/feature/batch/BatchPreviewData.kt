@@ -139,7 +139,7 @@ internal object BatchPreviewData {
             this
         }
 
-    private fun item(
+    internal fun item(
         id: Long,
         name: String,
         status: ItemStatus,

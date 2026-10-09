@@ -98,6 +98,27 @@ class ResolveBatchReviewTest {
         }
 
     @Test
+    fun `originals already deleted elsewhere are finalized without counting savings or asking again`() =
+        runTest {
+            batches.put(batch)
+            deletion.missing += accepted.original.uri
+
+            val result = resolve(batch.id, ReviewAction.DELETE_ORIGINALS_AND_CONTINUE, remaining)
+
+            assertThat(result).isEqualTo(DomainResult.Success(ReviewResolution.COMPLETED))
+            assertThat(deletion.userDeletionRequests.single()).containsExactly(defaultAccepted.original.uri)
+            // Only the original SpaceSaver deleted counts; the other was freed by someone else.
+            assertThat(savings.events.map { it.bytesSaved }).containsExactly(mb(5))
+            assertThat(
+                batches
+                    .get(batch.id)!!
+                    .items
+                    .first()
+                    .status,
+            ).isEqualTo(ItemStatus.ORIGINAL_DELETED)
+        }
+
+    @Test
     fun `cancelling the system dialog changes nothing and keeps the batch in review`() =
         runTest {
             batches.put(batch)

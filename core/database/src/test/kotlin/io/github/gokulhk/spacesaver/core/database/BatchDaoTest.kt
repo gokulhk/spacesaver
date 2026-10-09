@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.database.entity.BatchEntity
 import io.github.gokulhk.spacesaver.core.database.entity.BatchItemEntity
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -129,23 +130,23 @@ class BatchDaoTest {
         }
 
     @Test
-    fun `batches in any of several statuses`() =
+    fun `media IDs are observed by item status across batches`() =
         runTest {
-            val planned =
+            val first =
                 dao.insertBatchWithItems(
-                    BatchEntity(status = "PLANNED", createdAtMillis = 0),
-                    listOf(item(0)),
+                    BatchEntity(status = "COMPLETED", createdAtMillis = 0),
+                    listOf(item(0), item(1)),
                 )
-            val converting =
-                dao.insertBatchWithItems(
-                    BatchEntity(status = "CONVERTING", createdAtMillis = 1),
-                    listOf(item(0)),
-                )
-            dao.insertBatchWithItems(BatchEntity(status = "COMPLETED", createdAtMillis = 2), listOf(item(0)))
+            dao.insertBatchWithItems(BatchEntity(status = "COMPLETED", createdAtMillis = 1), listOf(item(2)))
+            val kept =
+                dao
+                    .getBatch(first)!!
+                    .items
+                    .first { it.position == 1 }
+                    .id
+            dao.updateItem(kept, status = "KEPT_BOTH", outputUri = null, outputSizeBytes = null)
 
-            val found = dao.getBatchesWithStatuses(listOf("PLANNED", "CONVERTING"))
-
-            assertThat(found.map { it.batch.id }).containsExactly(planned, converting).inOrder()
+            assertThat(dao.observeMediaIdsWithItemStatus("KEPT_BOTH").first()).containsExactly(101L)
         }
 
     @Test

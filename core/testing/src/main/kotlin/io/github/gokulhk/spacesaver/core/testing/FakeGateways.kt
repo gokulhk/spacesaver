@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.update
 /** Records deletion requests; the user's answer is set with [outcome]. */
 class FakeDeletionGateway(
     var outcome: DeletionOutcome = DeletionOutcome.DELETED,
+    private val onUserDeleted: (List<String>) -> Unit = {},
 ) : DeletionGateway {
     /** URIs passed to each system dialog request. */
     val userDeletionRequests = mutableListOf<List<String>>()
@@ -43,14 +44,24 @@ class FakeDeletionGateway(
     /** URIs of own files deleted without a dialog. */
     val ownFilesDeleted = mutableListOf<String>()
 
+    /** URIs that no longer exist, e.g. originals deleted outside the app; approved deletions are added. */
+    val missing = mutableSetOf<String>()
+
     override suspend fun requestUserDeletion(uris: List<String>): DeletionOutcome {
         userDeletionRequests += uris
+        if (outcome == DeletionOutcome.DELETED) {
+            missing += uris
+            onUserDeleted(uris)
+        }
         return outcome
     }
 
     override suspend fun deleteOwnFiles(uris: List<String>) {
         ownFilesDeleted += uris
+        missing += uris
     }
+
+    override suspend fun existing(uris: List<String>): Set<String> = uris.filterNot { it in missing }.toSet()
 }
 
 /** Fixed encoder capabilities. */
@@ -180,8 +191,14 @@ class FakeBatchRepository(
         put(batch.copy(items = items))
     }
 
-    override suspend fun unfinishedBatches(): List<Batch> =
-        batches.value.values.filter { it.status == BatchStatus.PLANNED || it.status == BatchStatus.CONVERTING }
+    override fun observeKeptOriginals(): Flow<Set<MediaId>> =
+        batches.map { all ->
+            all.values
+                .flatMap { it.items }
+                .filter { it.status == ItemStatus.KEPT_BOTH }
+                .map { it.original.id }
+                .toSet()
+        }
 
     override suspend fun referencedOutputUris(): Set<String> =
         batches.value.values

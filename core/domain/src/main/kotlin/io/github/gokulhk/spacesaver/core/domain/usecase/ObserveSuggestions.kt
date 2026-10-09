@@ -14,6 +14,7 @@ import io.github.gokulhk.spacesaver.core.domain.repository.SettingsRepository
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.ImageContent
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
+import io.github.gokulhk.spacesaver.core.model.MediaId
 import io.github.gokulhk.spacesaver.core.model.MediaItem
 import io.github.gokulhk.spacesaver.core.model.MediaType
 import io.github.gokulhk.spacesaver.core.model.VideoCodec
@@ -65,7 +66,8 @@ data class Suggestion(
 /**
  * Smart suggestions (plan Section 1.3): groups eligible files by kind, applies the user's
  * chosen option per group (or the default), and orders groups by savings. Files already in an
- * unfinished batch are left out, so nothing is converted twice.
+ * unfinished batch, or kept next to their compressed copy, are left out, so nothing is converted
+ * twice.
  */
 class ObserveSuggestions
     @Inject
@@ -92,10 +94,7 @@ class ObserveSuggestions
                         mediaRepository.observeMedia(MediaType.IMAGE),
                         settingsRepository.settings,
                         calibrationRepository.observeCalibration(),
-                        batchRepository
-                            .observeActiveBatches()
-                            .map { batches -> batches.flatMap { batch -> batch.items.map { it.original.id } }.toSet() }
-                            .distinctUntilChanged(),
+                        reservedMedia(),
                     ) { allVideos, allImages, settings, calibration, reserved ->
                         val videos = allVideos.filter { it.id !in reserved }
                         val images = allImages.filter { it.id !in reserved }
@@ -107,6 +106,15 @@ class ObserveSuggestions
                     }
                 emitAll(suggestions)
             }
+
+        /** Files not to suggest: in an unfinished batch, or kept next to their compressed copy. */
+        private fun reservedMedia(): Flow<Set<MediaId>> =
+            combine(
+                batchRepository.observeActiveBatches().map { batches ->
+                    batches.flatMap { batch -> batch.items.map { it.original.id } }
+                },
+                batchRepository.observeKeptOriginals(),
+            ) { inBatches, kept -> inBatches.toSet() + kept }.distinctUntilChanged()
 
         private fun suggestionFor(
             group: SuggestionGroup,

@@ -7,6 +7,7 @@ import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsEvent
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
+import io.github.gokulhk.spacesaver.core.model.MediaId
 import io.github.gokulhk.spacesaver.core.model.MediaItem
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -110,8 +111,11 @@ interface BatchRepository {
         outputSize: ByteSize? = null,
     )
 
-    /** Batches that were planned or converting, e.g. when the process died mid-batch. */
-    suspend fun unfinishedBatches(): List<Batch>
+    /**
+     * IDs of originals whose compressed copy the user kept next to them ("Keep both"). They are
+     * never suggested again, or every plan would convert them anew.
+     */
+    fun observeKeptOriginals(): Flow<Set<MediaId>>
 
     /** Every output URI recorded on any batch item, for orphan cleanup. */
     suspend fun referencedOutputUris(): Set<String>

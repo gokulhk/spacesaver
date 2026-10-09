@@ -71,10 +71,16 @@ class ResolveBatchReview
             }
         }
 
+        /**
+         * Deletes the accepted originals that still exist. An original already deleted outside the
+         * app is finalized too, but records no savings: SpaceSaver didn't free that space.
+         */
         private suspend fun deleteOriginals(batch: Batch): DomainResult<ReviewResolution> {
             val accepted = batch.items.filter { it.isAccepted }
+            val present = deletionGateway.existing(accepted.map { it.original.uri })
+            val toDelete = accepted.filter { it.original.uri in present }
             val sizes =
-                accepted.map { item ->
+                toDelete.map { item ->
                     val output =
                         item.outputSize ?: return DomainResult.Failure(
                             DomainError.OutputVerificationFailed("Accepted item ${item.id.value} has no output"),
@@ -83,8 +89,8 @@ class ResolveBatchReview
                 }
             return savingsCalculator.reviewEvents(ReviewAction.DELETE_ORIGINALS_AND_CONTINUE, sizes).flatMap { events ->
                 val approved =
-                    accepted.isEmpty() ||
-                        deletionGateway.requestUserDeletion(accepted.map { it.original.uri }) == DeletionOutcome.DELETED
+                    toDelete.isEmpty() ||
+                        deletionGateway.requestUserDeletion(toDelete.map { it.original.uri }) == DeletionOutcome.DELETED
                 if (approved) {
                     finalize(batch, ItemEvent.ORIGINAL_DELETED, events)
                 } else {

@@ -45,6 +45,11 @@ class FakeMediaRepository(
         library.value = items
     }
 
+    /** Removes the files at [uris], as a deletion would. */
+    fun remove(uris: Collection<String>) {
+        library.update { items -> items.filterNot { it.uri in uris } }
+    }
+
     override fun observeMedia(type: MediaType): Flow<List<MediaItem>> =
         library.map { all ->
             all.filter {

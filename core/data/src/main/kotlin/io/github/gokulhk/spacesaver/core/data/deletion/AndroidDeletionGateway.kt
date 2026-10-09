@@ -3,6 +3,7 @@ package io.github.gokulhk.spacesaver.core.data.deletion
 import android.content.ContentResolver
 import android.content.IntentSender
 import android.net.Uri
+import android.os.Bundle
 import android.provider.MediaStore
 import androidx.core.net.toUri
 import io.github.gokulhk.spacesaver.core.domain.repository.DeletionGateway
@@ -42,5 +43,20 @@ class AndroidDeletionGateway
 
         override suspend fun deleteOwnFiles(uris: List<String>) {
             uris.forEach { resolver.delete(it.toUri(), null) }
+        }
+
+        override suspend fun existing(uris: List<String>): Set<String> = uris.filter(::exists).toSet()
+
+        private fun exists(uri: String): Boolean {
+            val id = uri.toUri().lastPathSegment ?: return false
+            val args =
+                Bundle().apply {
+                    putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "${MediaStore.MediaColumns._ID} = ?")
+                    putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf(id))
+                }
+            return resolver.query(uri.toUri(), arrayOf(MediaStore.MediaColumns._ID), args, null).use {
+                (it?.count ?: 0) >
+                    0
+            }
         }
     }
