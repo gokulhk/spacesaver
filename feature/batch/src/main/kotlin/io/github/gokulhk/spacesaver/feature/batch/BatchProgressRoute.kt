@@ -1,6 +1,5 @@
 package io.github.gokulhk.spacesaver.feature.batch
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -12,7 +11,7 @@ import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
  * Batch progress for [batchId], connected to its [BatchProgressViewModel].
  *
  * @param onReview opens the batch's review.
- * @param onBack leaves the screen; also called for the system back gesture.
+ * @param onBack leaves the screen.
  */
 @Composable
 fun BatchProgressRoute(
@@ -28,7 +27,6 @@ fun BatchProgressRoute(
             factory.create(batchId.value)
         }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    BackHandler(onBack = onBack)
     BatchProgressScreen(
         state = state,
         onEvent = viewModel::onEvent,

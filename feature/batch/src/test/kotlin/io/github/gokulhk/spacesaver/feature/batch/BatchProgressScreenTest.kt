@@ -8,7 +8,10 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
+import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
+import io.github.gokulhk.spacesaver.core.model.ByteSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,6 +103,26 @@ class BatchProgressScreenTest {
         composeRule.onNodeWithText("0 of 6 files converted").assertIsDisplayed()
         composeRule.onNodeWithText("Batch cancelled", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("Review").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a finished batch says which files kept their original`() {
+        val items =
+            listOf(
+                BatchPreviewData.item(1, "deleted.mp4", ItemStatus.ORIGINAL_DELETED, original = 100, output = 40),
+                BatchPreviewData.item(2, "discarded.mp4", ItemStatus.OUTPUT_DISCARDED, original = 100, output = 40),
+                BatchPreviewData.item(3, "kept.mp4", ItemStatus.KEPT_BOTH, original = 100, output = 40),
+            ).map { it.copy(outputSize = ByteSize.megabytes(40)) }
+        val run = BatchPreviewData.awaitingReview.run
+        show(
+            BatchPreviewData.awaitingReview.copy(
+                run = run.copy(batch = run.batch.copy(status = BatchStatus.COMPLETED, items = items)),
+            ),
+        )
+
+        composeRule.onNodeWithText("Done · Saved 60.0 MB").assertIsDisplayed()
+        composeRule.onNodeWithText("Done · Kept the original").assertIsDisplayed()
+        composeRule.onNodeWithText("Done · Kept both versions").assertIsDisplayed()
     }
 
     @Test

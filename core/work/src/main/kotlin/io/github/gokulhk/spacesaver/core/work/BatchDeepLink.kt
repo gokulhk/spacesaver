@@ -4,10 +4,14 @@ import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 
 /**
  * The link that opens a batch's progress screen, e.g. from its notification: `spacesaver://batch/42`.
- * `MainActivity` declares a matching intent filter; navigation reads the ID back with [parse].
+ * `MainActivity` declares a matching intent filter, and the navigation graph's deep link for batch
+ * progress is built from [BASE_PATH].
  */
 object BatchDeepLink {
-    private const val PREFIX = "spacesaver://batch/"
+    /** The link without the batch ID; navigation appends `/{batchId}` to match it. */
+    const val BASE_PATH = "spacesaver://batch"
+
+    private const val PREFIX = "$BASE_PATH/"
 
     /** The link for [batchId]. */
     fun uri(batchId: BatchId): String = PREFIX + batchId.value

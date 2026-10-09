@@ -6,26 +6,26 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.gokulhk.spacesaver.core.data.deletion.DeletionRequests
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
-import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.ui.permission.canReadMedia
-import io.github.gokulhk.spacesaver.core.work.BatchDeepLink
 import io.github.gokulhk.spacesaver.deletion.DeletionRequestHost
 import io.github.gokulhk.spacesaver.navigation.AppTheme
-import io.github.gokulhk.spacesaver.navigation.SpaceSaverApp
+import io.github.gokulhk.spacesaver.navigation.SpaceSaverNavHost
+import io.github.gokulhk.spacesaver.navigation.openBatchFromLink
 import javax.inject.Inject
 
 /**
  * Single activity hosting the Compose UI. Draws edge to edge; [SpaceSaverTheme] sets the system
  * bar icon colors.
  *
- * Starts on onboarding until media access is granted, then home (see [SpaceSaverApp]). A batch
- * notification opens the batch's progress, whether the app was closed or already open. The theme
+ * Starts on onboarding until media access is granted, then Home (see [SpaceSaverNavHost]). A
+ * batch notification opens the batch's progress, whether the app was closed (Navigation reads the
+ * launch intent) or already open ([onNewIntent] puts it on top of the current screen). The theme
  * follows Settings and changes everywhere at once.
  */
 @AndroidEntryPoint
@@ -35,22 +35,21 @@ class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
 
-    /** A batch to open from a notification, until the UI has shown it. */
-    private var deepLinkBatch by mutableStateOf<BatchId?>(null)
+    /** Set once the UI exists, so a notification tapped while the app is open can navigate. */
+    private var navController: NavHostController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Only a fresh launch follows the link; after rotation the UI already shows it.
-        if (savedInstanceState == null) deepLinkBatch = BatchDeepLink.parse(intent?.dataString)
         setContent {
+            val controller = rememberNavController()
+            DisposableEffect(controller) {
+                navController = controller
+                onDispose { navController = null }
+            }
             AppTheme(mainViewModel.themeMode) {
                 DeletionRequestHost(deletionRequests)
-                SpaceSaverApp(
-                    canReadMedia = canReadMedia(),
-                    deepLinkBatch = deepLinkBatch,
-                    onDeepLinkOpen = { deepLinkBatch = null },
-                )
+                SpaceSaverNavHost(navController = controller, canReadMedia = canReadMedia())
             }
         }
     }
@@ -58,6 +57,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        BatchDeepLink.parse(intent.dataString)?.let { deepLinkBatch = it }
+        navController?.openBatchFromLink(intent)
     }
 }

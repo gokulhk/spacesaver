@@ -36,6 +36,9 @@
     <string name="batch_cancel_dismiss">Keep going</string>
 
     <string name="batch_item_saves">Saves %s</string>
+    <string name="batch_item_saved">Saved %s</string>
+    <string name="batch_item_kept_original">Kept the original</string>
+    <string name="batch_item_kept_both">Kept both versions</string>
     <string name="batch_item_failed">Couldn\'t convert this file</string>
 
     <string name="batch_not_found_title">This batch no longer exists</string>

@@ -181,7 +181,14 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
   - The theme applies app-wide at once: `MainActivity` follows `MainViewModel.themeMode` through `AppTheme`, which draws nothing until the setting is read so a saved dark theme never flashes light (`AppThemeTest`).
   - Settings joined the bottom bar; the selected tab now lives in `SpaceSaverApp`, so returning from a screen opened on top (licenses, plan detail, progress, review) keeps the tab.
   - Verified on the emulator: dark theme applied to every screen at once and persisted across a restart; HEIC disabled with its explanation; licenses page; back from licenses returns to Settings.
-- [ ] 7.8 Navigation
+- [x] 7.8 Navigation
+  - Navigation Compose with type-safe `@Serializable` routes (`Destinations.kt`) in `SpaceSaverNavHost`, replacing the interim state-based switching.
+  - Bottom bar on Home, Browse, and Settings only; tabs replace each other above Home and save/restore their state.
+  - Back-stack rules: onboarding is removed once finished; a review replaces the progress screen it came from, and the next batch's progress replaces the review, so Back always leads Home.
+  - Notification deep link `spacesaver://batch/{batchId}` (`BatchDeepLink.BASE_PATH`): on a cold start Navigation opens the batch with Home beneath; with the app open, `openBatchFromLink` puts it on top of the current screen and Back returns there.
+  - Destinations take their content from `AppScreens` (production `FeatureScreens`), so `NavigationTest` checks every back-stack rule with stub screens and a `TestNavHostController`, without Hilt.
+  - Fix: finished batches showed "Saves" for files whose compressed copy was discarded; they now read "Kept the original", "Kept both versions", or "Saved X".
+  - Verified on the emulator: cold start from the link (progress, then Back to Home) and warm (opened above Settings, Back to Settings, same activity instance). `assembleRelease` succeeds with R8; running the minified build is Task 8.5.
 
 ## Phase 8 — Hardening
 

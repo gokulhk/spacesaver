@@ -1,6 +1,5 @@
 package io.github.gokulhk.spacesaver.feature.batch
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,7 +64,6 @@ fun ReviewRoute(
         }
     }
 
-    BackHandler(onBack = onClose)
     ReviewScreen(
         state = state,
         onEvent = viewModel::onEvent,

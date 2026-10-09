@@ -67,7 +67,22 @@ private fun itemDetail(
             null
         }
 
-        else -> {
+        ItemStatus.REJECTED, ItemStatus.OUTPUT_DISCARDED -> {
+            stringResource(R.string.batch_item_kept_original)
+        }
+
+        ItemStatus.KEPT_BOTH -> {
+            stringResource(R.string.batch_item_kept_both)
+        }
+
+        ItemStatus.ORIGINAL_DELETED -> {
+            item.outputSize?.let {
+                stringResource(R.string.batch_item_saved, sizes.format(item.original.size.minusOrZero(it)).display)
+            }
+        }
+
+        // Converted, waiting for review.
+        ItemStatus.CONVERTED, ItemStatus.ACCEPTED -> {
             item.outputSize?.let {
                 stringResource(R.string.batch_item_saves, sizes.format(item.original.size.minusOrZero(it)).display)
             }

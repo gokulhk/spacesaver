@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.spacesaver.android.application)
     alias(libs.plugins.spacesaver.android.compose)
     alias(libs.plugins.spacesaver.hilt)
+    // Type-safe navigation routes are @Serializable classes.
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -47,10 +49,13 @@ dependencies {
     implementation(projects.feature.settings)
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.work.runtime.ktx)
 
+    testImplementation(libs.androidx.navigation.testing)
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.kotlinx.coroutines.test)
 }

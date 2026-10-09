@@ -20,6 +20,8 @@
 - When verification fails, the diff images are in `<module>/build/outputs/roborazzi/` (CI uploads them in the `reports` artifact).
 - Wrap screenshot content in a `Surface`, as real screens are, so text picks up the theme's content color.
 
+Navigation is tested in `:app` with `NavigationTest`: the real `SpaceSaverNavHost` and a `TestNavHostController`, with stub screens supplied through `AppScreens`, so back-stack rules are checked without Hilt or real data.
+
 ViewModel tests create the ViewModel lazily (`by lazy`), because `viewModelScope` captures `Dispatchers.Main` when first used, and JUnit initializes fields before `MainDispatcherRule` swaps it in.
 
 Why not a parameterized light/dark run: Robolectric's `ParameterizedRobolectricTestRunner` produced blank captures for every test after the parameter switch, so the light/dark pair is rendered in a single capture instead.
