@@ -10,6 +10,7 @@ import io.github.gokulhk.spacesaver.core.database.dao.SavingsDao
 import io.github.gokulhk.spacesaver.core.database.entity.BatchEntity
 import io.github.gokulhk.spacesaver.core.database.entity.ConvertedFileEntity
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
 import io.github.gokulhk.spacesaver.core.domain.repository.Batch
@@ -77,7 +78,13 @@ class BatchRepositoryImpl
             status: ItemStatus,
             outputUri: String?,
             outputSize: ByteSize?,
-        ) = batchDao.updateItem(id.value, status.name, outputUri, outputSize?.bytes)
+            failure: ItemFailure?,
+        ) {
+            database.withTransaction {
+                batchDao.updateItem(id.value, status.name, outputUri, outputSize?.bytes)
+                failure?.let { batchDao.setItemFailure(id.value, it.reason.name, it.detail) }
+            }
+        }
 
         override fun observeKeptOriginals(): Flow<Set<MediaId>> =
             batchDao.observeMediaIdsWithItemStatus(ItemStatus.KEPT_BOTH.name).map { ids -> ids.map(::MediaId).toSet() }

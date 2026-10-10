@@ -1,6 +1,5 @@
 package io.github.gokulhk.spacesaver.feature.browse
 
-import android.content.res.Resources
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +42,7 @@ fun BrowseRoute(
                     }
 
                     is BrowseEffect.AddedToPlan -> {
-                        addedMessage(resources, effect)
+                        resources.getQuantityString(R.plurals.browse_added_to_plan, effect.added, effect.added)
                     }
                 }
             snackbarHostState.showSnackbar(message)
@@ -57,16 +56,4 @@ fun BrowseRoute(
         modifier = modifier,
         snackbarHostState = snackbarHostState,
     )
-}
-
-/** "Added 3 files to your plan. 1 file can't be made smaller." */
-private fun addedMessage(
-    resources: Resources,
-    effect: BrowseEffect.AddedToPlan,
-): String {
-    val (added, notEligible) = effect.result
-    return listOfNotNull(
-        resources.getQuantityString(R.plurals.browse_added_to_plan, added, added).takeIf { added > 0 },
-        resources.getQuantityString(R.plurals.browse_not_eligible, notEligible, notEligible).takeIf { notEligible > 0 },
-    ).joinToString(" ")
 }

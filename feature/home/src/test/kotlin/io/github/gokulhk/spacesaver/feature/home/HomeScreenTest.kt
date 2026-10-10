@@ -15,6 +15,7 @@ import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
+import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.usecase.SuggestionGroup
 import io.github.gokulhk.spacesaver.core.model.VideoPreset
 import org.junit.Rule
@@ -102,6 +103,17 @@ class HomeScreenTest {
         composeRule.onNodeWithText("View progress").performClick()
 
         assertThat(opened).containsExactly(HomePreviewData.RUNNING_BATCH)
+    }
+
+    @Test
+    fun `a batch that can't start explains why, and OK closes it`() {
+        show(HomePreviewData.ready.copy(error = DomainError.UnsupportedAudio("audio/ac3")))
+
+        composeRule.onNodeWithText("Couldn't start the batch").assertIsDisplayed()
+        composeRule.onNodeWithText("AC-3", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("OK").performClick()
+
+        assertThat(events).containsExactly(HomeEvent.DismissError)
     }
 
     @Test

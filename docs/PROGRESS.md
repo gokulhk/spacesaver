@@ -190,6 +190,19 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
   - Fix: finished batches showed "Saves" for files whose compressed copy was discarded; they now read "Kept the original", "Kept both versions", or "Saved X".
   - Verified on the emulator: cold start from the link (progress, then Back to Home) and warm (opened above Settings, Back to Settings, same activity instance). `assembleRelease` succeeds with R8; running the minified build is Task 8.5.
 
+## Device findings after Phase 7
+
+Found by running on a physical phone (2026-10-10), each reproduced and fixed with regression tests:
+
+- [x] **Portrait videos came out landscape.** Media3 encodes portrait video as landscape frames and carries the turn on the track format; its own muxer wrapper writes it to the file, but `StreamMp4MuxerFactory` (which replaces that wrapper) never did. Fixed there. Output verification had also been told to ignore rotation ("rotation metadata can swap the edges"), which is why this passed; it now compares orientation, using the dimensions a viewer sees for both the original and the output.
+- [x] **Converted videos had no sound.** A batch item rebuilt from the database carries no audio details (only the duration of a video's details survives), `AudioPolicy.forTrack(null)` reads that as "no audio", and the converter then called `setRemoveAudio(true)`. The converter no longer removes audio on the plan's say-so. The earlier converter tests passed the audio policy directly, and the emulator test videos had no sound, so neither could show it. **Videos converted before this fix are silent.**
+  - Safeguards added: output verification fails (original kept) when the converted file has no sound, fewer audio tracks, or fewer channels than the original; a video with several audio tracks is refused up front (Transformer keeps one track per video, so converting would drop the rest).
+- [x] **Failures and rejections gave no reason.**
+  - Browse "Convert": each file that can't be added is listed with its reason in a dialog (`IneligibleReason` made user-facing, plus `ALREADY_HANDLED`), replacing the "1 file can't be made smaller" snackbar.
+  - Batch progress: a failed file shows why ("This phone can't read the video's sound format (AC-3)…", "This video has 2 audio tracks…"). Media3 decoder errors are mapped to `UnsupportedAudio` / `UnsupportedVideo` naming the codec. Reasons are stored with the item (`failure_reason`, `failure_detail`: Room schema version 2, additive migration; old items keep the general line).
+  - Home ("Couldn't start the batch") and Review ("Couldn't finish the review") errors are dialogs too (`InfoDialog` in the design system). Snackbars remain only for confirmations.
+- Verified on the emulator through the real UI with 4K phone-shaped videos: portrait (rotation flag and native) converted upright with stereo sound at the same level (-24.1 dB vs -24.09 dB); the two-track and AC-3 videos failed with their reasons; the 720p video was explained in the Browse dialog.
+
 ## Phase 8 — Hardening
 
 - [ ] 8.0 Test hygiene: instrumented tests leave empty `DCIM/SpaceSaverTest*` folders on the device (200+ on the test AVD); clean them up in teardown and delete the existing ones. Also check orphan cleanup: a 0-byte `photo2_compressed.webp` was left on the test AVD after a cancelled batch

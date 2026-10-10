@@ -41,6 +41,18 @@ class MediaFixtures {
     /** The 4K H.264 clip as an original video. */
     fun video4k(name: String = "VID_4K.mp4") = insertVideo("video_4k_h264.mp4", name, Resolution(3840, 2160))
 
+    /**
+     * A video fixture asset as an original.
+     *
+     * @param resolution how the video looks on screen, which is how a gallery lists it.
+     */
+    fun video(
+        asset: String,
+        name: String,
+        resolution: Resolution,
+        format: MediaFormat = MediaFormat.MP4_H264,
+    ) = insertVideo(asset, name, resolution, format)
+
     /** The 1080p H.264 clip as an original video. */
     fun video1080p(name: String = "VID_1080.mp4") = insertVideo("video_1080p_h264.mp4", name, Resolution(1920, 1080))
 
@@ -151,6 +163,7 @@ class MediaFixtures {
         asset: String,
         name: String,
         resolution: Resolution,
+        format: MediaFormat = MediaFormat.MP4_H264,
     ): MediaItem {
         val details =
             VideoDetails(
@@ -166,7 +179,7 @@ class MediaFixtures {
             assets.open(asset).use {
                 it.readBytes()
             },
-            MediaFormat.MP4_H264,
+            format,
             resolution,
             details,
         )

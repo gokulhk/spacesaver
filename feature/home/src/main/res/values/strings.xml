@@ -26,6 +26,10 @@
     <string name="home_empty_title">Nothing to compress right now</string>
     <string name="home_empty_message">Photos and videos that can be made smaller will show up here.</string>
 
+    <!-- Start errors -->
+    <string name="home_start_error_title">Couldn\'t start the batch</string>
+    <string name="home_start_error_ok">OK</string>
+
     <!-- Running batch -->
     <string name="home_running_title">Batch in progress</string>
     <!-- %1$d files done of %2$d. -->

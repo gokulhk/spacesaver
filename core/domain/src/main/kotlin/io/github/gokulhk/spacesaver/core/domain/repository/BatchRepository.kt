@@ -1,6 +1,7 @@
 package io.github.gokulhk.spacesaver.core.domain.repository
 
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
@@ -34,6 +35,7 @@ value class BatchItemId(
  * @property status lifecycle state.
  * @property outputUri the converted file, once written.
  * @property outputSize the converted file's size, once written.
+ * @property failure why it wasn't converted, when its status is FAILED.
  */
 data class BatchItem(
     val id: BatchItemId,
@@ -43,6 +45,7 @@ data class BatchItem(
     val status: ItemStatus,
     val outputUri: String? = null,
     val outputSize: ByteSize? = null,
+    val failure: ItemFailure? = null,
 )
 
 /**
@@ -103,12 +106,13 @@ interface BatchRepository {
         status: BatchStatus,
     )
 
-    /** Sets an item's status and, once converted, its output. */
+    /** Sets an item's status and, once converted, its output, or, once failed, why. */
     suspend fun updateItem(
         id: BatchItemId,
         status: ItemStatus,
         outputUri: String? = null,
         outputSize: ByteSize? = null,
+        failure: ItemFailure? = null,
     )
 
     /**

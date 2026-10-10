@@ -38,10 +38,12 @@
         <item quantity="one">Added %d file to your plan.</item>
         <item quantity="other">Added %d files to your plan.</item>
     </plurals>
-    <plurals name="browse_not_eligible">
-        <item quantity="one">%d file can\'t be made smaller.</item>
-        <item quantity="other">%d files can\'t be made smaller.</item>
+    <plurals name="browse_rejected_title">
+        <item quantity="one">%d file couldn\'t be added</item>
+        <item quantity="other">%d files couldn\'t be added</item>
     </plurals>
+    <string name="browse_nothing_added">Nothing was added to your plan.</string>
+    <string name="browse_rejected_ok">OK</string>
 
     <string name="browse_empty_videos">No videos found</string>
     <string name="browse_empty_images">No images found</string>

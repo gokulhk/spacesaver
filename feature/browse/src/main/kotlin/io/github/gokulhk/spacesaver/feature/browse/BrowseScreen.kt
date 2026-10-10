@@ -61,6 +61,7 @@ fun BrowseScreen(
         }
     }
     if (state.confirmingDelete) DeleteConfirmation(state, onEvent)
+    state.addResult?.let { RejectedFilesDialog(it) { onEvent(BrowseEvent.DismissAddResult) } }
 }
 
 @Composable

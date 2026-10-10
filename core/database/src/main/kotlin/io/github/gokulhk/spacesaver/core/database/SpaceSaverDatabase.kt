@@ -3,6 +3,7 @@ package io.github.gokulhk.spacesaver.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import io.github.gokulhk.spacesaver.core.database.dao.BatchDao
 import io.github.gokulhk.spacesaver.core.database.dao.CalibrationDao
 import io.github.gokulhk.spacesaver.core.database.dao.ConvertedFileDao
@@ -44,7 +45,7 @@ abstract class SpaceSaverDatabase : RoomDatabase() {
     /** Constants. */
     companion object {
         /** Current schema version. Bump it together with a new migration in [Migrations.ALL]. */
-        const val VERSION = 1
+        const val VERSION = 2
 
         /** Database file name. */
         const val NAME = "spacesaver.db"
@@ -53,6 +54,15 @@ abstract class SpaceSaverDatabase : RoomDatabase() {
 
 /** Every schema migration, in order. Destructive migration is never allowed: the ledger matters. */
 object Migrations {
-    /** All migrations; empty while the schema is at version 1. */
-    val ALL: Array<Migration> = emptyArray()
+    /** Version 2: batch items remember why they failed (`failure_reason`, `failure_detail`). Old items have none. */
+    val MIGRATION_1_2: Migration =
+        object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE batch_items ADD COLUMN failure_reason TEXT")
+                db.execSQL("ALTER TABLE batch_items ADD COLUMN failure_detail TEXT")
+            }
+        }
+
+    /** All migrations, in order. */
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
 }

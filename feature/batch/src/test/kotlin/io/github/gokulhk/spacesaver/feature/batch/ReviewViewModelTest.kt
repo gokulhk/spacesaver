@@ -31,6 +31,11 @@ class ReviewViewModelTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
+    private companion object {
+        /** The default reserve on a 128 GB phone: 5% of capacity. */
+        const val RESERVE_ON_128_GB_MB = 6_400L
+    }
+
     private val photos = (10L..11L).map { anImage(id = it, format = MediaFormat.JPEG, size = ByteSize.megabytes(6)) }
     private val graph = PlanTestGraph((1L..2L).map { aVideo(id = it, height = 2160) } + photos)
 
@@ -132,6 +137,23 @@ class ReviewViewModelTest {
                 assertThat(awaitItem()).isEqualTo(ReviewEffect.NothingDeleted)
             }
             assertThat((viewModel.uiState.value as ReviewUiState.Content).isWorking).isFalse()
+        }
+
+    @Test
+    fun `an action that can't be applied explains why in a dialog until dismissed`() =
+        runTest {
+            graph.storage.setFree(ByteSize.megabytes(RESERVE_ON_128_GB_MB))
+            val viewModel = viewModel(reviewBatch())
+            content(viewModel)
+
+            viewModel.onEvent(ReviewEvent.Act(ReviewAction.KEEP_BOTH_AND_CONTINUE))
+
+            val state = viewModel.uiState.value as ReviewUiState.Content
+            assertThat(state.error).isNotNull()
+            assertThat(state.isWorking).isFalse()
+
+            viewModel.onEvent(ReviewEvent.DismissError)
+            assertThat((viewModel.uiState.value as ReviewUiState.Content).error).isNull()
         }
 
     @Test

@@ -9,12 +9,15 @@ import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionInput
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionResult
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpec
 import io.github.gokulhk.spacesaver.core.domain.conversion.MediaConverter
+import io.github.gokulhk.spacesaver.core.domain.result.AudioProblem
 import io.github.gokulhk.spacesaver.core.domain.result.DomainError
+import io.github.gokulhk.spacesaver.core.media.output.AudioInspector
 import io.github.gokulhk.spacesaver.core.media.output.MediaStoreOutputWriter
 import io.github.gokulhk.spacesaver.core.media.output.PendingOutput
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import io.github.gokulhk.spacesaver.core.model.MediaType
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
@@ -47,6 +50,7 @@ class Media3VideoConverter
             onProgress: (Float) -> Unit,
         ): ConversionResult {
             require(spec is ConversionSpec.Video) { "Video converter needs a video spec, got $spec" }
+            soundtrackProblem(input.item.uri)?.let { return ConversionResult.Failure(it) }
             val output = writer.createPending(input.item, spec.targetFormat)
             return try {
                 writer.openFileDescriptor(output.uri, "rw").use { pfd ->
@@ -65,25 +69,23 @@ class Media3VideoConverter
             }
         }
 
+        /**
+         * Transformer keeps one audio track per video, so a recording with several (e.g. a screen
+         * recording with microphone and system sound) would silently lose the others. Refusing it
+         * up front avoids hours of work ending in a file the user wouldn't want.
+         */
+        private suspend fun soundtrackProblem(sourceUri: String): DomainError? {
+            val source =
+                withContext(Dispatchers.IO) { AudioInspector.inspect(context.contentResolver, sourceUri.toUri()) }
+            return if (source.trackCount > 1) {
+                DomainError.AudioNotPreserved(AudioProblem.TRACKS_LOST, source, source.copy(trackCount = 1))
+            } else {
+                null
+            }
+        }
+
         /** Deletes [output] even when called from a cancelled coroutine. */
         private suspend fun discardQuietly(output: PendingOutput) {
             withContext(NonCancellable) { runCatching { writer.discard(output.uri) } }
         }
-
-        private fun ExportException.toDomainError(
-            sourceUri: String,
-            target: MediaFormat,
-        ): DomainError =
-            when (errorCode) {
-                ExportException.ERROR_CODE_IO_FILE_NOT_FOUND,
-                ExportException.ERROR_CODE_IO_NO_PERMISSION,
-                ExportException.ERROR_CODE_IO_UNSPECIFIED,
-                -> DomainError.SourceUnreadable(sourceUri)
-
-                ExportException.ERROR_CODE_ENCODER_INIT_FAILED,
-                ExportException.ERROR_CODE_ENCODING_FORMAT_UNSUPPORTED,
-                -> DomainError.EncoderUnavailable(target)
-
-                else -> DomainError.Unknown(this)
-            }
     }

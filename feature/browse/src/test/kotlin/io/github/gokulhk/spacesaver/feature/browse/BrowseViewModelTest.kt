@@ -4,6 +4,7 @@ import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.domain.eligibility.ImageEligibility
+import io.github.gokulhk.spacesaver.core.domain.eligibility.IneligibleReason
 import io.github.gokulhk.spacesaver.core.domain.eligibility.MediaEligibility
 import io.github.gokulhk.spacesaver.core.domain.eligibility.SavingsThresholds
 import io.github.gokulhk.spacesaver.core.domain.eligibility.VideoEligibility
@@ -13,11 +14,11 @@ import io.github.gokulhk.spacesaver.core.domain.repository.DeletionOutcome
 import io.github.gokulhk.spacesaver.core.domain.repository.MediaSort
 import io.github.gokulhk.spacesaver.core.domain.savings.SavingsCalculator
 import io.github.gokulhk.spacesaver.core.domain.usecase.AddToPlan
-import io.github.gokulhk.spacesaver.core.domain.usecase.AddToPlanResult
 import io.github.gokulhk.spacesaver.core.domain.usecase.DeleteMediaItems
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveMediaBySize
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveStorageOverview
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObserveSuggestions
+import io.github.gokulhk.spacesaver.core.domain.usecase.RejectedFile
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import io.github.gokulhk.spacesaver.core.model.MediaType
@@ -185,7 +186,22 @@ class BrowseViewModelTest {
         }
 
     @Test
-    fun `converting adds eligible files to the plan and clears the selection`() =
+    fun `converting files that can all be added just confirms`() =
+        runTest {
+            state()
+            viewModel.onEvent(BrowseEvent.ToggleSelection(video4k))
+
+            viewModel.effects.test {
+                viewModel.onEvent(BrowseEvent.ConvertSelected)
+
+                assertThat(awaitItem()).isEqualTo(BrowseEffect.AddedToPlan(added = 1))
+            }
+            assertThat(viewModel.uiState.value.selection).isEmpty()
+            assertThat(viewModel.uiState.value.addResult).isNull()
+        }
+
+    @Test
+    fun `files that can't be added are explained in a dialog, not a passing message`() =
         runTest {
             state()
             viewModel.onEvent(BrowseEvent.ToggleSelection(video4k))
@@ -193,9 +209,17 @@ class BrowseViewModelTest {
 
             viewModel.effects.test {
                 viewModel.onEvent(BrowseEvent.ConvertSelected)
-
-                assertThat(awaitItem()).isEqualTo(BrowseEffect.AddedToPlan(AddToPlanResult(added = 1, notEligible = 1)))
+                expectNoEvents()
             }
+
+            val result = checkNotNull(viewModel.uiState.value.addResult)
+            assertThat(result.added).isEqualTo(1)
+            assertThat(
+                result.rejected,
+            ).containsExactly(RejectedFile(smallVideo, IneligibleReason.BELOW_PRESET_RESOLUTION))
             assertThat(viewModel.uiState.value.selection).isEmpty()
+
+            viewModel.onEvent(BrowseEvent.DismissAddResult)
+            assertThat(viewModel.uiState.value.addResult).isNull()
         }
 }

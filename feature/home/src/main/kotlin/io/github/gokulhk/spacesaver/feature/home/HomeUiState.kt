@@ -35,6 +35,7 @@ sealed interface HomeUiState {
      * @property planExpanded whether the plan card lists its batches.
      * @property presetSheet the suggestion whose preset sheet is open, if any.
      * @property isStarting whether a batch is being started (disables the button).
+     * @property error why the last "Start batch" failed, while its dialog is open.
      */
     data class Content(
         val savings: SavingsSummary,
@@ -46,6 +47,7 @@ sealed interface HomeUiState {
         val planExpanded: Boolean,
         val presetSheet: Suggestion?,
         val isStarting: Boolean,
+        val error: DomainError? = null,
     ) : HomeUiState
 }
 
@@ -96,6 +98,9 @@ sealed interface HomeEvent {
 
     /** "Start batch 1" was tapped. */
     data object StartBatch : HomeEvent
+
+    /** The dialog explaining why a batch couldn't start was closed. */
+    data object DismissError : HomeEvent
 }
 
 /** One-off results the screen acts on. */
@@ -107,14 +112,5 @@ sealed interface HomeEffect {
      */
     data class BatchStarted(
         val batchId: BatchId,
-    ) : HomeEffect
-
-    /**
-     * Something failed; show a message.
-     *
-     * @property error why.
-     */
-    data class ShowError(
-        val error: DomainError,
     ) : HomeEffect
 }

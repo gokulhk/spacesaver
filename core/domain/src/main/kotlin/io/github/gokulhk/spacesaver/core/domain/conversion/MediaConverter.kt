@@ -16,7 +16,8 @@ sealed interface ConversionSpec {
      *
      * @property targetShortEdge output short edge in pixels; aspect ratio is kept.
      * @property videoBitrate target video bitrate.
-     * @property audio how the audio track is handled.
+     * @property audio how the audio track is handled; informational, since the converter never removes audio
+     * (see `TransformerConfig.editedItem`).
      */
     data class Video(
         override val targetFormat: MediaFormat,

@@ -98,6 +98,28 @@ class BrowseScreenTest {
     }
 
     @Test
+    fun `files that couldn't be added are listed with their reasons`() {
+        show(BrowsePreviewData.videosState.copy(addResult = BrowsePreviewData.partlyAdded))
+
+        composeRule.onNodeWithText("2 files couldn't be added").assertIsDisplayed()
+        composeRule.onNodeWithText("Added 1 file to your plan.").assertIsDisplayed()
+        composeRule.onNodeWithText("Screen_recording.mp4").assertIsDisplayed()
+        composeRule.onNodeWithText("The video's resolution is already low", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("It's already well compressed", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("OK").performClick()
+
+        assertThat(events).containsExactly(BrowseEvent.DismissAddResult)
+    }
+
+    @Test
+    fun `when nothing could be added the dialog says so`() {
+        show(BrowsePreviewData.videosState.copy(addResult = BrowsePreviewData.noneAdded))
+
+        composeRule.onNodeWithText("1 file couldn't be added").assertIsDisplayed()
+        composeRule.onNodeWithText("Nothing was added to your plan.").assertIsDisplayed()
+    }
+
+    @Test
     fun `an empty tab says so`() {
         show(BrowsePreviewData.videosState, items = emptyList())
 

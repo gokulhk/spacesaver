@@ -3,6 +3,7 @@ package io.github.gokulhk.spacesaver.core.domain.usecase
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.conversion.TargetSelection
 import io.github.gokulhk.spacesaver.core.domain.eligibility.Eligibility
+import io.github.gokulhk.spacesaver.core.domain.eligibility.IneligibleReason
 import io.github.gokulhk.spacesaver.core.domain.eligibility.MediaEligibility
 import io.github.gokulhk.spacesaver.core.domain.estimate.CalibrationTable
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -100,7 +102,7 @@ class ObserveSuggestions
                         val images = allImages.filter { it.id !in reserved }
                         val jpegTarget = TargetSelection.jpegTarget(settings.imageFormat, heicSupported)
                         val context = Context(codec, jpegTarget, heicSupported, calibration, selections)
-                        (videoGroups(videos) + imageGroups(images))
+                        (groupedItems(videos) + groupedItems(images))
                             .mapNotNull { (group, items) -> suggestionFor(group, items, context) }
                             .sortedByDescending { it.totalSavings }
                     }
@@ -137,31 +139,97 @@ class ObserveSuggestions
             return (result as? Eligibility.Eligible)?.let { PlanCandidate(item, option, it.estimate) }
         }
 
-        private fun videoGroups(videos: List<MediaItem>): List<Pair<SuggestionGroup, List<MediaItem>>> {
-            val byGroup =
-                videos.groupBy { video ->
-                    val shortEdge = video.resolution?.shortEdge ?: 0
-                    when {
-                        shortEdge >= VideoPreset.UHD_TO_FHD.minSourceShortEdge -> SuggestionGroup.VIDEOS_4K
-                        shortEdge >= VideoPreset.FHD_TO_HD.minSourceShortEdge -> SuggestionGroup.VIDEOS_FULL_HD
-                        else -> null
-                    }
-                }
-            return byGroup.mapNotNull { (group, items) -> group?.let { it to items } }
+        private fun groupedItems(items: List<MediaItem>): List<Pair<SuggestionGroup, List<MediaItem>>> =
+            items
+                .groupBy(::groupOf)
+                .mapNotNull { (group, grouped) -> group?.let { it to grouped } }
+
+        /** The suggestion group [item] belongs to; null when no preset applies to it at all. */
+        private fun groupOf(item: MediaItem): SuggestionGroup? =
+            when (item.type) {
+                MediaType.VIDEO -> videoGroupOf(item)
+                MediaType.IMAGE -> imageGroupOf(item)
+            }
+
+        private fun videoGroupOf(video: MediaItem): SuggestionGroup? {
+            val shortEdge = video.resolution?.shortEdge ?: 0
+            return when {
+                shortEdge >= VideoPreset.UHD_TO_FHD.minSourceShortEdge -> SuggestionGroup.VIDEOS_4K
+                shortEdge >= VideoPreset.FHD_TO_HD.minSourceShortEdge -> SuggestionGroup.VIDEOS_FULL_HD
+                else -> null
+            }
         }
 
-        private fun imageGroups(images: List<MediaItem>): List<Pair<SuggestionGroup, List<MediaItem>>> {
-            val byGroup =
-                images.groupBy { image ->
-                    when {
-                        image.format == MediaFormat.JPEG -> SuggestionGroup.JPEG_PHOTOS
-                        image.format != MediaFormat.PNG -> null
-                        image.imageContent == ImageContent.PHOTO -> SuggestionGroup.PNG_PHOTOS
-                        else -> SuggestionGroup.SCREENSHOTS
-                    }
-                }
-            return byGroup.mapNotNull { (group, items) -> group?.let { it to items } }
+        private fun imageGroupOf(image: MediaItem): SuggestionGroup? =
+            when {
+                image.format == MediaFormat.JPEG -> SuggestionGroup.JPEG_PHOTOS
+                image.format != MediaFormat.PNG -> null
+                image.imageContent == ImageContent.PHOTO -> SuggestionGroup.PNG_PHOTOS
+                else -> SuggestionGroup.SCREENSHOTS
+            }
+
+        /**
+         * Why each of [items] isn't suggested, judged by the same rules as [invoke] under every
+         * group's default preset. Files that would be suggested are left out of the result.
+         */
+        suspend fun explain(items: List<MediaItem>): Map<MediaId, IneligibleReason> {
+            val reserved = reservedMedia().first()
+            val context = currentContext()
+            return items
+                .mapNotNull { item -> reasonFor(item, item.id in reserved, context)?.let { item.id to it } }
+                .toMap()
         }
+
+        private suspend fun currentContext(): Context {
+            val heicSupported = encoderCapabilities.supportsHeicEncoding()
+            val jpegTarget = TargetSelection.jpegTarget(settingsRepository.settings.first().imageFormat, heicSupported)
+            val codec = TargetSelection.videoCodec(encoderCapabilities.hasHardwareHevcEncoder())
+            return Context(
+                codec,
+                jpegTarget,
+                heicSupported,
+                calibrationRepository.observeCalibration().first(),
+                emptyMap(),
+            )
+        }
+
+        private fun reasonFor(
+            item: MediaItem,
+            reserved: Boolean,
+            context: Context,
+        ): IneligibleReason? {
+            val group = groupOf(item)
+            return when {
+                reserved -> IneligibleReason.ALREADY_HANDLED
+                item.producedBySpaceSaver -> IneligibleReason.PRODUCED_BY_SPACESAVER
+                group != null -> evaluatedReason(item, group, context)
+                else -> reasonOutsideEveryGroup(item)
+            }
+        }
+
+        /** Why [item], which belongs to [group], isn't eligible under that group's default preset. */
+        private fun evaluatedReason(
+            item: MediaItem,
+            group: SuggestionGroup,
+            context: Context,
+        ): IneligibleReason? {
+            val option = context.optionsFor(group).first()
+            return (
+                eligibility.evaluate(
+                    item,
+                    option,
+                    context.codec,
+                    context.calibration,
+                ) as? Eligibility.NotEligible
+            )?.reason
+        }
+
+        private fun reasonOutsideEveryGroup(item: MediaItem): IneligibleReason =
+            when {
+                item.type != MediaType.VIDEO -> IneligibleReason.UNSUPPORTED_FORMAT
+                item.resolution == null -> IneligibleReason.MISSING_METADATA
+                else -> IneligibleReason.BELOW_PRESET_RESOLUTION
+            }
 
         /** Inputs shared by every group in one computation. */
         private data class Context(

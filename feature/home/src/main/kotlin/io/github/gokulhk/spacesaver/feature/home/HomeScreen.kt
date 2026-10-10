@@ -16,19 +16,19 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import io.github.gokulhk.spacesaver.core.designsystem.component.InfoDialog
 import io.github.gokulhk.spacesaver.core.designsystem.component.SavingsBanner
 import io.github.gokulhk.spacesaver.core.designsystem.component.StorageBar
 import io.github.gokulhk.spacesaver.core.designsystem.component.StorageCategory
@@ -40,11 +40,13 @@ import io.github.gokulhk.spacesaver.core.designsystem.theme.Spacing
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
+import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.usecase.PendingReview
 import io.github.gokulhk.spacesaver.core.domain.usecase.PlanStatus
 import io.github.gokulhk.spacesaver.core.domain.usecase.PlanSuggestion
 import io.github.gokulhk.spacesaver.core.domain.usecase.StorageOverview
 import io.github.gokulhk.spacesaver.core.model.ByteSize
+import io.github.gokulhk.spacesaver.core.ui.ErrorMessageMapper
 import io.github.gokulhk.spacesaver.core.ui.SizeTextFormatter
 import io.github.gokulhk.spacesaver.core.ui.rememberSizeTextFormatter
 
@@ -60,7 +62,6 @@ internal const val HOME_LIST_TAG = "home_list"
  * @param onReviewClick opens the review of a batch.
  * @param onOpenPlan opens Plan detail.
  * @param onOpenBatch opens a batch's progress.
- * @param snackbarHostState shows errors.
  */
 @Composable
 fun HomeScreen(
@@ -70,11 +71,9 @@ fun HomeScreen(
     onOpenPlan: () -> Unit,
     onOpenBatch: (BatchId) -> Unit,
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { padding ->
         when (state) {
@@ -91,6 +90,7 @@ fun HomeScreen(
             }
         }
     }
+    (state as? HomeUiState.Content)?.error?.let { StartError(it) { onEvent(HomeEvent.DismissError) } }
     val sheet = (state as? HomeUiState.Content)?.presetSheet
     if (sheet != null) {
         PresetSheet(
@@ -211,6 +211,20 @@ private fun PendingReviewCard(
             }
         }
     }
+}
+
+/** Why "Start batch" didn't start one, in a dialog because the reason has to be read. */
+@Composable
+private fun StartError(
+    error: DomainError,
+    onDismiss: () -> Unit,
+) {
+    InfoDialog(
+        title = stringResource(R.string.home_start_error_title),
+        message = ErrorMessageMapper.message(LocalResources.current, rememberSizeTextFormatter(), error),
+        dismissLabel = stringResource(R.string.home_start_error_ok),
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable

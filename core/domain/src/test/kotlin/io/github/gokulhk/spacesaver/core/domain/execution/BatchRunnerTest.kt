@@ -3,6 +3,8 @@ package io.github.gokulhk.spacesaver.core.domain.execution
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStateMachine
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.FailureReason
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionResult
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpecResolver
@@ -124,6 +126,22 @@ class BatchRunnerTest {
                 statuses(batch),
             ).containsExactly(ItemStatus.CONVERTED, ItemStatus.FAILED, ItemStatus.CONVERTED).inOrder()
             assertThat(batches.get(batch.id)!!.status).isEqualTo(BatchStatus.AWAITING_REVIEW)
+        }
+
+    @Test
+    fun `a failed item remembers why, so the progress screen can say`() =
+        runTest {
+            val batch = batches.create(photos)
+            converter.behavior = { _, _ -> ConversionResult.Failure(DomainError.UnsupportedAudio("audio/ac3")) }
+
+            runner.run(batch.id)
+
+            assertThat(batches.get(batch.id)!!.items.map { it.failure })
+                .containsExactly(
+                    ItemFailure(FailureReason.UNSUPPORTED_AUDIO, "audio/ac3"),
+                    ItemFailure(FailureReason.UNSUPPORTED_AUDIO, "audio/ac3"),
+                    ItemFailure(FailureReason.UNSUPPORTED_AUDIO, "audio/ac3"),
+                )
         }
 
     @Test

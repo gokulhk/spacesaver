@@ -205,16 +205,18 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `starting with nothing to convert reports the error`() =
+    fun `a batch that can't start explains why in a dialog until dismissed`() =
         runTest {
             media.setItems(emptyList())
             content()
 
-            viewModel.effects.test {
-                viewModel.onEvent(HomeEvent.StartBatch)
+            viewModel.onEvent(HomeEvent.StartBatch)
 
-                assertThat(awaitItem()).isEqualTo(HomeEffect.ShowError(DomainError.NothingToConvert))
-            }
+            assertThat((viewModel.uiState.value as HomeUiState.Content).error).isEqualTo(DomainError.NothingToConvert)
+            assertThat((viewModel.uiState.value as HomeUiState.Content).isStarting).isFalse()
+
+            viewModel.onEvent(HomeEvent.DismissError)
+            assertThat((viewModel.uiState.value as HomeUiState.Content).error).isNull()
         }
 
     private companion object {

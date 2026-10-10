@@ -48,6 +48,9 @@ enum class IneligibleReason {
 
     /** The estimated saving is under 20% or under the absolute minimum. */
     SAVINGS_TOO_SMALL,
+
+    /** Already in a batch that hasn't finished, or the user kept both versions after a review. */
+    ALREADY_HANDLED,
 }
 
 /**

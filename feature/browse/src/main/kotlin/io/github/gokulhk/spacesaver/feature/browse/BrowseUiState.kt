@@ -17,6 +17,8 @@ import io.github.gokulhk.spacesaver.core.model.sumOfSize
  * @property categoryTotal space used by the tab's category; null until storage is read.
  * @property selection selected files, in selection order.
  * @property confirmingDelete whether the delete confirmation is shown.
+ * @property addResult what "Convert" did, while its dialog is open; only set when some files
+ * couldn't be added, so the user can read why.
  * @property isWorking whether a delete or convert is in progress.
  */
 data class BrowseUiState(
@@ -25,6 +27,7 @@ data class BrowseUiState(
     val categoryTotal: ByteSize? = null,
     val selection: Map<MediaId, MediaItem> = emptyMap(),
     val confirmingDelete: Boolean = false,
+    val addResult: AddToPlanResult? = null,
     val isWorking: Boolean = false,
 ) {
     /** Whether rows are in multi-select mode. */
@@ -77,6 +80,9 @@ sealed interface BrowseEvent {
 
     /** "Convert" was tapped. */
     data object ConvertSelected : BrowseEvent
+
+    /** The dialog explaining files that couldn't be added was closed. */
+    data object DismissAddResult : BrowseEvent
 }
 
 /** One-off results Browse shows. */
@@ -93,11 +99,12 @@ sealed interface BrowseEffect {
     ) : BrowseEffect
 
     /**
-     * Files were added to the plan.
+     * Every selected file was added to the plan. (When some couldn't be, a dialog explains why
+     * instead.)
      *
-     * @property result how many were added and how many weren't eligible.
+     * @property added how many files.
      */
     data class AddedToPlan(
-        val result: AddToPlanResult,
+        val added: Int,
     ) : BrowseEffect
 }

@@ -80,6 +80,8 @@ data class BatchItemEntity(
     val status: String,
     @ColumnInfo(name = "output_uri") val outputUri: String?,
     @ColumnInfo(name = "output_size_bytes") val outputSizeBytes: Long?,
+    @ColumnInfo(name = "failure_reason") val failureReason: String? = null,
+    @ColumnInfo(name = "failure_detail") val failureDetail: String? = null,
 )
 
 /**

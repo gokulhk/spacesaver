@@ -14,6 +14,7 @@ import io.github.gokulhk.spacesaver.core.domain.repository.PublishedOutput
 import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
 import io.github.gokulhk.spacesaver.core.domain.result.map
 import io.github.gokulhk.spacesaver.core.model.AppDispatchers
+import io.github.gokulhk.spacesaver.core.model.AudioSummary
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.Dispatcher
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
@@ -45,11 +46,15 @@ class AndroidOutputGateway
             spec: ConversionSpec,
         ): DomainResult<ByteSize> {
             val probed = probe.probe(outputUri, spec.targetFormat.mediaType)
+            // A video is compared with its own file, not MediaStore's figures: they disagree about
+            // rotation, and the soundtrack isn't in MediaStore at all.
+            val source = if (spec is ConversionSpec.Video) probe.sourceTraits(original.uri) else null
             return OutputVerification
                 .verify(
                     probed,
-                    expectedResolution(original, spec),
+                    expectedResolution(original, source?.displayed, spec),
                     original.size,
+                    sourceAudio = source?.audio ?: AudioSummary.NONE,
                 ).map { probed.size }
         }
 
@@ -65,11 +70,19 @@ class AndroidOutputGateway
 
         private fun expectedResolution(
             original: MediaItem,
+            sourceDisplayed: Resolution?,
             spec: ConversionSpec,
         ): Resolution? =
             when (spec) {
-                is ConversionSpec.Image -> original.resolution
-                is ConversionSpec.Video -> original.resolution?.scaledToShortEdge(spec.targetShortEdge)
+                is ConversionSpec.Image -> {
+                    original.resolution
+                }
+
+                is ConversionSpec.Video -> {
+                    (sourceDisplayed ?: original.resolution)?.scaledToShortEdge(
+                        spec.targetShortEdge,
+                    )
+                }
             }
 
         private fun pendingIn(collection: Uri): List<String> {

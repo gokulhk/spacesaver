@@ -1,5 +1,8 @@
 package io.github.gokulhk.spacesaver.feature.browse
 
+import io.github.gokulhk.spacesaver.core.domain.eligibility.IneligibleReason
+import io.github.gokulhk.spacesaver.core.domain.usecase.AddToPlanResult
+import io.github.gokulhk.spacesaver.core.domain.usecase.RejectedFile
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import io.github.gokulhk.spacesaver.core.model.MediaId
@@ -27,6 +30,21 @@ internal object BrowsePreviewData {
 
     /** Two videos selected. */
     val selectingState = videosState.copy(selection = videos.take(2).associateBy { it.id })
+
+    /** One file added, two that couldn't be, for the explanation dialog. */
+    val partlyAdded =
+        AddToPlanResult(
+            added = 1,
+            rejected =
+                listOf(
+                    RejectedFile(videos[4], IneligibleReason.BELOW_PRESET_RESOLUTION),
+                    RejectedFile(videos[3], IneligibleReason.SAVINGS_TOO_SMALL),
+                ),
+        )
+
+    /** A single file that couldn't be added. */
+    val noneAdded =
+        AddToPlanResult(added = 0, rejected = listOf(RejectedFile(videos[4], IneligibleReason.PRODUCED_BY_SPACESAVER)))
 
     private fun video(
         id: Long,

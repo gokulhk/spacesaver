@@ -80,6 +80,25 @@ class BatchDaoTest {
         }
 
     @Test
+    fun `a failure reason is stored with the item and kept by later updates`() =
+        runTest {
+            val id = dao.insertBatchWithItems(BatchEntity(status = "CONVERTING", createdAtMillis = 0), listOf(item(0)))
+            val itemId =
+                dao
+                    .getBatch(id)!!
+                    .items
+                    .single()
+                    .id
+
+            dao.setItemFailure(itemId, "UNSUPPORTED_AUDIO", "audio/ac3")
+            dao.updateItem(itemId, "FAILED", outputUri = null, outputSizeBytes = null)
+
+            val stored = dao.getBatch(id)!!.items.single()
+            assertThat(stored.failureReason).isEqualTo("UNSUPPORTED_AUDIO")
+            assertThat(stored.failureDetail).isEqualTo("audio/ac3")
+        }
+
+    @Test
     fun `observing one batch emits updates`() =
         runTest {
             val id = dao.insertBatchWithItems(BatchEntity(status = "PLANNED", createdAtMillis = 0), listOf(item(0)))

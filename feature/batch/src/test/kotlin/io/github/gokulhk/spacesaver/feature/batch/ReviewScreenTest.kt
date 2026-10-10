@@ -12,6 +12,8 @@ import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.domain.batch.ReviewAction
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchItemId
+import io.github.gokulhk.spacesaver.core.domain.result.DomainError
+import io.github.gokulhk.spacesaver.core.model.ByteSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -100,6 +102,17 @@ class ReviewScreenTest {
         composeRule.onNodeWithContentDescription("Close comparison").performClick()
 
         assertThat(events).contains(ReviewEvent.CloseComparison)
+    }
+
+    @Test
+    fun `an action that failed says why, and OK closes it`() {
+        show(ReviewPreviewData.review.copy(error = DomainError.InsufficientSpace(ByteSize.gigabytes(2))))
+
+        composeRule.onNodeWithText("Couldn't finish the review").assertIsDisplayed()
+        composeRule.onNodeWithText("Not enough free space", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("OK").performClick()
+
+        assertThat(events).containsExactly(ReviewEvent.DismissError)
     }
 
     @Test

@@ -75,6 +75,7 @@ class BrowseViewModel
                 BrowseEvent.DismissDelete -> local.update { it.copy(confirmingDelete = false) }
                 BrowseEvent.ConfirmDelete -> delete()
                 BrowseEvent.ConvertSelected -> convert()
+                BrowseEvent.DismissAddResult -> local.update { it.copy(addResult = null) }
             }
         }
 
@@ -99,8 +100,18 @@ class BrowseViewModel
             local.update { it.copy(isWorking = true) }
             viewModelScope.launch {
                 val result = addToPlan(selection)
-                local.update { it.copy(selection = emptyMap(), isWorking = false) }
-                effectChannel.send(BrowseEffect.AddedToPlan(result))
+                // Reasons need reading, so they get a dialog; a clean success just gets a passing message.
+                local.update {
+                    it.copy(
+                        selection = emptyMap(),
+                        isWorking = false,
+                        addResult =
+                            result.takeIf { r ->
+                                r.rejected.isNotEmpty()
+                            },
+                    )
+                }
+                if (result.rejected.isEmpty()) effectChannel.send(BrowseEffect.AddedToPlan(result.added))
             }
         }
 

@@ -1,6 +1,7 @@
 package io.github.gokulhk.spacesaver.core.ui
 
 import android.content.res.Resources
+import io.github.gokulhk.spacesaver.core.domain.batch.toItemFailure
 import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 
@@ -17,16 +18,15 @@ object ErrorMessageMapper {
                 resources.getString(R.string.error_insufficient_space, sizes.format(error.requiredFreeSpace).display)
             }
 
-            is DomainError.EncoderUnavailable -> {
-                resources.getString(R.string.error_encoder_unavailable, resources.getString(error.format.label))
-            }
-
-            is DomainError.SourceUnreadable -> {
-                resources.getString(R.string.error_source_unreadable)
-            }
-
-            is DomainError.OutputVerificationFailed -> {
-                resources.getString(R.string.error_output_verification_failed)
+            // Everything that can fail a single file reads the same here as on the progress screen.
+            is DomainError.EncoderUnavailable,
+            is DomainError.SourceUnreadable,
+            is DomainError.UnsupportedAudio,
+            is DomainError.UnsupportedVideo,
+            is DomainError.AudioNotPreserved,
+            is DomainError.OutputVerificationFailed,
+            -> {
+                FailureMessages.message(resources, error.toItemFailure())
             }
 
             DomainError.NothingToConvert -> {

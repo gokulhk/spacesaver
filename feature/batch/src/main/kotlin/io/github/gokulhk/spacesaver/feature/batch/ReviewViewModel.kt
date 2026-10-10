@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** What the review screen shows. */
@@ -45,11 +44,13 @@ sealed interface ReviewUiState {
      * @property review the batch, its decisions, and the available actions.
      * @property comparing the file open in the before/after viewer, if any.
      * @property isWorking whether an action is being applied (buttons disabled).
+     * @property error why the last action couldn't be applied, while its dialog is open.
      */
     data class Content(
         val review: BatchReview,
         val comparing: BatchItem?,
         val isWorking: Boolean,
+        val error: DomainError? = null,
     ) : ReviewUiState
 }
 
@@ -78,6 +79,9 @@ sealed interface ReviewEvent {
     /** The before/after viewer was closed. */
     data object CloseComparison : ReviewEvent
 
+    /** The dialog explaining why an action couldn't be applied was closed. */
+    data object DismissError : ReviewEvent
+
     /**
      * An action button was tapped.
      *
@@ -104,15 +108,6 @@ sealed interface ReviewEffect {
 
     /** The system delete dialog was cancelled; nothing changed. */
     data object NothingDeleted : ReviewEffect
-
-    /**
-     * Something failed.
-     *
-     * @property error why.
-     */
-    data class ShowError(
-        val error: DomainError,
-    ) : ReviewEffect
 }
 
 /**
@@ -130,6 +125,7 @@ class ReviewViewModel
     ) : ViewModel() {
         private val comparing = MutableStateFlow<BatchItemId?>(null)
         private val isWorking = MutableStateFlow(false)
+        private val error = MutableStateFlow<DomainError?>(null)
         private val effectChannel = Channel<ReviewEffect>(Channel.BUFFERED)
 
         /** One-off results. */
@@ -137,7 +133,12 @@ class ReviewViewModel
 
         /** The screen state. */
         val uiState: StateFlow<ReviewUiState> =
-            combine(observeBatchReview(BatchId(batchId)), comparing, isWorking) { review, comparingId, working ->
+            combine(
+                observeBatchReview(BatchId(batchId)),
+                comparing,
+                isWorking,
+                error,
+            ) { review, comparingId, working, failure ->
                 when {
                     review == null -> {
                         ReviewUiState.NotFound
@@ -152,6 +153,7 @@ class ReviewViewModel
                             review,
                             review.reviewItems.firstOrNull { it.id == comparingId },
                             working,
+                            failure,
                         )
                     }
                 }
@@ -178,6 +180,10 @@ class ReviewViewModel
                     comparing.value = null
                 }
 
+                ReviewEvent.DismissError -> {
+                    error.value = null
+                }
+
                 is ReviewEvent.Act -> {
                     act(event.action)
                 }
@@ -189,18 +195,20 @@ class ReviewViewModel
             if (isWorking.value) return
             isWorking.value = true
             viewModelScope.launch {
-                val effect =
-                    when (val result = completeReview(review, action)) {
-                        is DomainResult.Success -> result.value.toEffect()
-                        is DomainResult.Failure -> ReviewEffect.ShowError(result.error)
+                when (val result = completeReview(review, action)) {
+                    is DomainResult.Success -> {
+                        val effect = result.value.toEffect()
+                        // A finished review leaves the screen; keep the buttons disabled until it does.
+                        if (effect == ReviewEffect.NothingDeleted) isWorking.value = false
+                        effectChannel.send(effect)
                     }
-                // A finished review leaves the screen; keep the buttons disabled until it does.
-                if (effect == ReviewEffect.NothingDeleted ||
-                    effect is ReviewEffect.ShowError
-                ) {
-                    isWorking.update { false }
+
+                    // A reason has to be read, so it gets a dialog rather than a passing message.
+                    is DomainResult.Failure -> {
+                        error.value = result.error
+                        isWorking.value = false
+                    }
                 }
-                effectChannel.send(effect)
             }
         }
 

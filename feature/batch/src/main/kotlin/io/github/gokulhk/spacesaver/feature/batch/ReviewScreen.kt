@@ -30,12 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import io.github.gokulhk.spacesaver.core.designsystem.component.EmptyState
+import io.github.gokulhk.spacesaver.core.designsystem.component.InfoDialog
 import io.github.gokulhk.spacesaver.core.designsystem.component.MediaCategory
 import io.github.gokulhk.spacesaver.core.designsystem.icon.SpaceSaverIcons
 import io.github.gokulhk.spacesaver.core.designsystem.preview.PreviewLightDark
@@ -43,7 +45,9 @@ import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.designsystem.theme.Spacing
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchItem
+import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.model.MediaType
+import io.github.gokulhk.spacesaver.core.ui.ErrorMessageMapper
 import io.github.gokulhk.spacesaver.core.ui.MediaThumbnail
 import io.github.gokulhk.spacesaver.core.ui.SizeTextFormatter
 import io.github.gokulhk.spacesaver.core.ui.rememberSizeTextFormatter
@@ -110,9 +114,24 @@ fun ReviewScreen(
             }
         }
     }
+    (state as? ReviewUiState.Content)?.error?.let { ReviewError(it) { onEvent(ReviewEvent.DismissError) } }
     (state as? ReviewUiState.Content)?.comparing?.let { item ->
         ComparisonViewer(item = item, onClose = { onEvent(ReviewEvent.CloseComparison) })
     }
+}
+
+/** Why the action couldn't be applied, in a dialog because the reason has to be read. */
+@Composable
+private fun ReviewError(
+    error: DomainError,
+    onDismiss: () -> Unit,
+) {
+    InfoDialog(
+        title = stringResource(R.string.review_error_title),
+        message = ErrorMessageMapper.message(LocalResources.current, rememberSizeTextFormatter(), error),
+        dismissLabel = stringResource(R.string.review_error_ok),
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable

@@ -6,6 +6,8 @@ import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.database.dao.SavingsDao
 import io.github.gokulhk.spacesaver.core.database.entity.SavingsEventEntity
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.FailureReason
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.repository.Batch
@@ -186,6 +188,23 @@ class BatchRepositoryImplTest {
             assertThat(stored.items.single().status).isEqualTo(ItemStatus.CONVERTED)
             assertThat(stored.items.single().outputUri).isEqualTo("content://out/2")
             assertThat(stored.items.single().outputSize).isEqualTo(ByteSize.megabytes(2))
+        }
+
+    @Test
+    fun `a failure reason round-trips, and unknown stored reasons read as unknown`() =
+        runTest {
+            val batch = repository.create(listOf(video, image))
+
+            repository.updateItem(
+                batch.items[0].id,
+                ItemStatus.FAILED,
+                failure = ItemFailure(FailureReason.UNSUPPORTED_AUDIO, "audio/ac3"),
+            )
+            database.batchDao().setItemFailure(batch.items[1].id.value, "REASON_FROM_THE_FUTURE", null)
+
+            val stored = repository.get(batch.id)!!.items
+            assertThat(stored[0].failure).isEqualTo(ItemFailure(FailureReason.UNSUPPORTED_AUDIO, "audio/ac3"))
+            assertThat(stored[1].failure).isEqualTo(ItemFailure(FailureReason.UNKNOWN))
         }
 
     @Test

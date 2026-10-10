@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.Flow
 
 /** Batch and batch item queries. */
 @Dao
+// A DAO is a flat list of one-statement queries; splitting it would only scatter them.
+@Suppress("TooManyFunctions")
 abstract class BatchDao {
     /** Inserts [batch] and its [items] in one transaction; returns the new batch ID. */
     @Transaction
@@ -55,6 +57,14 @@ abstract class BatchDao {
         status: String,
         outputUri: String?,
         outputSizeBytes: Long?,
+    )
+
+    /** Records why an item failed. */
+    @Query("UPDATE batch_items SET failure_reason = :reason, failure_detail = :detail WHERE id = :id")
+    abstract suspend fun setItemFailure(
+        id: Long,
+        reason: String,
+        detail: String?,
     )
 
     /** Media IDs of items with [status], across all batches, re-emitted on change. */

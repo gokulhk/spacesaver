@@ -2,12 +2,14 @@ package io.github.gokulhk.spacesaver.feature.batch
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import io.github.gokulhk.spacesaver.core.designsystem.component.BatchProgressRow
 import io.github.gokulhk.spacesaver.core.designsystem.component.ProgressStatus
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchItem
 import io.github.gokulhk.spacesaver.core.domain.usecase.BatchRun
+import io.github.gokulhk.spacesaver.core.ui.FailureMessages
 import io.github.gokulhk.spacesaver.core.ui.SizeTextFormatter
 
 /** Items no longer waiting or converting. */
@@ -58,8 +60,10 @@ private fun itemDetail(
     sizes: SizeTextFormatter,
 ): String? =
     when (item.status) {
+        // Why, when it was recorded; items that failed before reasons were kept get the general line.
         ItemStatus.FAILED -> {
-            stringResource(R.string.batch_item_failed)
+            item.failure?.let { FailureMessages.message(LocalResources.current, it) }
+                ?: stringResource(R.string.batch_item_failed)
         }
 
         // The status label already says why these weren't converted.

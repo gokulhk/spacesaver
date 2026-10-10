@@ -3,6 +3,8 @@ package io.github.gokulhk.spacesaver.core.data.mapper
 import io.github.gokulhk.spacesaver.core.database.entity.BatchItemEntity
 import io.github.gokulhk.spacesaver.core.database.entity.BatchWithItems
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.FailureReason
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionOption
 import io.github.gokulhk.spacesaver.core.domain.plan.PlanCandidate
@@ -63,27 +65,14 @@ internal fun BatchWithItems.toDomain(): Batch =
     )
 
 /**
- * The domain item. The original is rebuilt from the snapshot taken at planning time; video
- * details other than duration are re-read from the file by the converter.
+ * The domain item. The original is rebuilt from the snapshot taken at planning time, which keeps only
+ * the duration of a video's details (no bitrate, frame rate, or audio). Nothing downstream may treat
+ * missing audio details as "this video has no audio": the converter works from the file itself.
  */
-internal fun BatchItemEntity.toDomain(): BatchItem {
-    val w = width
-    val h = height
-    return BatchItem(
+internal fun BatchItemEntity.toDomain(): BatchItem =
+    BatchItem(
         id = BatchItemId(id),
-        original =
-            MediaItem(
-                id = MediaId(mediaId),
-                uri = uri,
-                displayName = displayName,
-                relativePath = relativePath,
-                format = MediaFormat.valueOf(format),
-                size = ByteSize(sizeBytes),
-                resolution = if (w != null && h != null) Resolution(w, h) else null,
-                dateTaken = dateTakenMillis?.let(Instant::ofEpochMilli),
-                dateModified = Instant.ofEpochMilli(dateModifiedMillis),
-                video = durationMillis?.let { VideoDetails(duration = it.milliseconds) },
-            ),
+        original = toMediaItem(),
         option =
             when (optionKind) {
                 OPTION_VIDEO -> ConversionOption.Video(VideoPreset.valueOf(optionValue))
@@ -93,5 +82,22 @@ internal fun BatchItemEntity.toDomain(): BatchItem {
         status = ItemStatus.valueOf(status),
         outputUri = outputUri,
         outputSize = outputSizeBytes?.let(::ByteSize),
+        failure = failureReason?.let { ItemFailure(FailureReason.fromStored(it), failureDetail) },
+    )
+
+private fun BatchItemEntity.toMediaItem(): MediaItem {
+    val w = width
+    val h = height
+    return MediaItem(
+        id = MediaId(mediaId),
+        uri = uri,
+        displayName = displayName,
+        relativePath = relativePath,
+        format = MediaFormat.valueOf(format),
+        size = ByteSize(sizeBytes),
+        resolution = if (w != null && h != null) Resolution(w, h) else null,
+        dateTaken = dateTakenMillis?.let(Instant::ofEpochMilli),
+        dateModified = Instant.ofEpochMilli(dateModifiedMillis),
+        video = durationMillis?.let { VideoDetails(duration = it.milliseconds) },
     )
 }

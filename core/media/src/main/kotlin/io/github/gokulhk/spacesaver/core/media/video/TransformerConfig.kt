@@ -50,7 +50,14 @@ internal object TransformerConfig {
             .addListener(listener)
             .build()
 
-    /** The input with downscaling and the frame rate cap applied. */
+    /**
+     * The input with downscaling and the frame rate cap applied.
+     *
+     * Audio is never removed here, whatever `spec.audio` says: the plan's audio details are a
+     * snapshot that can't see the file's real tracks (a batch item rebuilt from the database has
+     * none, which reads as "no audio"). Transformer keeps the tracks the file really has and copes
+     * with a video that has none.
+     */
     fun editedItem(
         source: Uri,
         spec: ConversionSpec.Video,
@@ -62,7 +69,6 @@ internal object TransformerConfig {
             )
         return EditedMediaItem
             .Builder(MediaItem.fromUri(source))
-            .setRemoveAudio(spec.audio == AudioPolicy.NONE)
             .setEffects(Effects(emptyList(), videoEffects))
             .build()
     }

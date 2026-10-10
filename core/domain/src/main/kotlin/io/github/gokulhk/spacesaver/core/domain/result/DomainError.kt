@@ -1,5 +1,6 @@
 package io.github.gokulhk.spacesaver.core.domain.result
 
+import io.github.gokulhk.spacesaver.core.model.AudioSummary
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 
@@ -33,6 +34,38 @@ sealed interface DomainError {
      */
     data class SourceUnreadable(
         val uri: String,
+    ) : DomainError
+
+    /**
+     * This phone can't read the video's audio format, so the video can't be converted without
+     * losing its sound.
+     *
+     * @property codec the audio format's MIME type, e.g. `audio/ac3`, if known.
+     */
+    data class UnsupportedAudio(
+        val codec: String?,
+    ) : DomainError
+
+    /**
+     * This phone can't read the video's picture format.
+     *
+     * @property codec the video format's MIME type, e.g. `video/av01`, if known.
+     */
+    data class UnsupportedVideo(
+        val codec: String?,
+    ) : DomainError
+
+    /**
+     * Converting would lose part of the soundtrack, so the original is kept.
+     *
+     * @property problem what would be lost.
+     * @property source the original's soundtrack.
+     * @property output the converted file's soundtrack (or what it would have).
+     */
+    data class AudioNotPreserved(
+        val problem: AudioProblem,
+        val source: AudioSummary,
+        val output: AudioSummary,
     ) : DomainError
 
     /**
@@ -81,4 +114,16 @@ sealed interface DomainError {
     data class Unknown(
         val cause: Throwable,
     ) : DomainError
+}
+
+/** How a converted video's soundtrack fell short of the original's. */
+enum class AudioProblem {
+    /** The original has sound; the converted file has none. */
+    MISSING,
+
+    /** The original has more audio tracks than the converted file. */
+    TRACKS_LOST,
+
+    /** The converted file has fewer channels (e.g. surround reduced to stereo). */
+    CHANNELS_LOST,
 }

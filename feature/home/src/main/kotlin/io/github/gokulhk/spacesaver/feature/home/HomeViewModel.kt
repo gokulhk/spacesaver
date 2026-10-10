@@ -3,6 +3,7 @@ package io.github.gokulhk.spacesaver.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.gokulhk.spacesaver.core.domain.result.DomainError
 import io.github.gokulhk.spacesaver.core.domain.result.DomainResult
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePendingReviews
 import io.github.gokulhk.spacesaver.core.domain.usecase.ObservePlan
@@ -83,6 +84,7 @@ class HomeViewModel
                     planExpanded = local.planExpanded,
                     presetSheet = plan.suggestions.firstOrNull { it.suggestion.group == local.presetGroup }?.suggestion,
                     isStarting = local.isStarting,
+                    error = local.error,
                 )
             }.stateIn(viewModelScope, WhileUiSubscribed, HomeUiState.Loading)
 
@@ -113,6 +115,10 @@ class HomeViewModel
                 HomeEvent.StartBatch -> {
                     startBatch()
                 }
+
+                HomeEvent.DismissError -> {
+                    local.update { it.copy(error = null) }
+                }
             }
         }
 
@@ -121,13 +127,17 @@ class HomeViewModel
             local.update { it.copy(isStarting = true) }
             viewModelScope.launch {
                 val candidates = plan.first().candidates
-                val effect =
-                    when (val result = startNextBatch(candidates)) {
-                        is DomainResult.Success -> HomeEffect.BatchStarted(result.value.id)
-                        is DomainResult.Failure -> HomeEffect.ShowError(result.error)
+                when (val result = startNextBatch(candidates)) {
+                    is DomainResult.Success -> {
+                        local.update { it.copy(isStarting = false) }
+                        effectChannel.send(HomeEffect.BatchStarted(result.value.id))
                     }
-                local.update { it.copy(isStarting = false) }
-                effectChannel.send(effect)
+
+                    // A reason has to be read, so it gets a dialog rather than a passing message.
+                    is DomainResult.Failure -> {
+                        local.update { it.copy(isStarting = false, error = result.error) }
+                    }
+                }
             }
         }
 
@@ -136,5 +146,6 @@ class HomeViewModel
             val planExpanded: Boolean = false,
             val presetGroup: SuggestionGroup? = null,
             val isStarting: Boolean = false,
+            val error: DomainError? = null,
         )
     }

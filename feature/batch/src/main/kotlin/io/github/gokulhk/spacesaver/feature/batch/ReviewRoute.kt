@@ -11,8 +11,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
-import io.github.gokulhk.spacesaver.core.ui.ErrorMessageMapper
-import io.github.gokulhk.spacesaver.core.ui.rememberSizeTextFormatter
 
 /**
  * Batch review for [batchId], connected to its [ReviewViewModel].
@@ -34,7 +32,6 @@ fun ReviewRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
-    val sizes = rememberSizeTextFormatter()
     val currentOnNextBatch by rememberUpdatedState(onNextBatch)
     val currentOnClose by rememberUpdatedState(onClose)
 
@@ -52,12 +49,6 @@ fun ReviewRoute(
                 ReviewEffect.NothingDeleted -> {
                     snackbarHostState.showSnackbar(
                         resources.getString(R.string.review_nothing_deleted),
-                    )
-                }
-
-                is ReviewEffect.ShowError -> {
-                    snackbarHostState.showSnackbar(
-                        ErrorMessageMapper.message(resources, sizes, effect.error),
                     )
                 }
             }

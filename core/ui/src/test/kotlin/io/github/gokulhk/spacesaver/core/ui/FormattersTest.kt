@@ -4,7 +4,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.designsystem.component.SizeText
+import io.github.gokulhk.spacesaver.core.domain.result.AudioProblem
 import io.github.gokulhk.spacesaver.core.domain.result.DomainError
+import io.github.gokulhk.spacesaver.core.model.AudioSummary
 import io.github.gokulhk.spacesaver.core.model.ByteSize
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import org.junit.Test
@@ -50,6 +52,9 @@ class FormattersTest {
                 DomainError.EncoderUnavailable(MediaFormat.HEIC),
                 DomainError.SourceUnreadable("content://x"),
                 DomainError.OutputVerificationFailed("bad"),
+                DomainError.UnsupportedAudio("audio/ac3"),
+                DomainError.UnsupportedVideo(null),
+                DomainError.AudioNotPreserved(AudioProblem.MISSING, AudioSummary(1, 2), AudioSummary.NONE),
                 DomainError.NothingToConvert,
                 DomainError.BatchNotFound(1),
                 DomainError.PermissionMissing,
@@ -58,10 +63,12 @@ class FormattersTest {
                 DomainError.Unknown(IllegalStateException()),
             )
 
-        val messages = errors.map { ErrorMessageMapper.message(resources, sizes, it) }
+        val messages = errors.associateWith { ErrorMessageMapper.message(resources, sizes, it) }
 
-        assertThat(messages.none { it.isBlank() }).isTrue()
-        assertThat(messages[0]).isEqualTo("Not enough free space. Free up 2.0 GB and try again.")
-        assertThat(messages[6]).isEqualTo("SpaceSaver needs access to your photos and videos.")
+        assertThat(messages.values.none { it.isBlank() }).isTrue()
+        assertThat(messages.getValue(DomainError.InsufficientSpace(ByteSize.gigabytes(2))))
+            .isEqualTo("Not enough free space. Free up 2.0 GB and try again.")
+        assertThat(messages.getValue(DomainError.PermissionMissing))
+            .isEqualTo("SpaceSaver needs access to your photos and videos.")
     }
 }

@@ -8,6 +8,10 @@
 | Instrumented | `./gradlew connectedDebugAndroidTest` | Needs a device or emulator on API 30+ |
 | Everything CI runs | `./gradlew check` | Tests, lint, detekt, ktlint, coverage |
 
+## Video fidelity
+
+`VideoFidelityTest` (instrumented, `:core:media`) runs the real converter on phone-shaped fixtures and checks what a viewer would experience: the displayed orientation of the output (rotation applied), each audio track's channel count, and, by decoding the audio to PCM, that every channel is audible. Check the *outcome*, not the plan: an earlier version asserted only that an audio track existed, and the converter tests passed the audio policy directly, so a defect in how the plan is rebuilt from the database went unseen. Run it with `./gradlew :core:media:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.gokulhk.spacesaver.core.media.VideoFidelityTest`.
+
 ## Screenshot tests
 
 - Each screenshot stacks the **light theme above the dark theme** in one image, so both are reviewed together.

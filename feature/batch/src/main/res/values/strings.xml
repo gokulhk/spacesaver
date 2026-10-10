@@ -70,6 +70,8 @@
     <string name="review_keep_both_note">Frees nothing now, so the next batch will be smaller.</string>
     <string name="review_stop_here">Stop here</string>
     <string name="review_nothing_deleted">Nothing was deleted. Your files are still here.</string>
+    <string name="review_error_title">Couldn\'t finish the review</string>
+    <string name="review_error_ok">OK</string>
     <string name="review_already_reviewed">This batch has already been reviewed</string>
     <string name="review_already_reviewed_message">Its files were kept or deleted as you chose.</string>
 

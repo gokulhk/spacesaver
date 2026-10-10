@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -198,6 +199,31 @@ class ComponentScreenshotTest {
 
     @Test
     fun confirmDialogDark() = confirmDialog(ThemeMode.DARK)
+
+    @Test
+    fun infoDialogLight() = infoDialog(ThemeMode.LIGHT)
+
+    @Test
+    fun infoDialogDark() = infoDialog(ThemeMode.DARK)
+
+    private fun infoDialog(themeMode: ThemeMode) {
+        composeRule.setContent {
+            SpaceSaverTheme(themeMode = themeMode) {
+                InfoDialog(
+                    title = "2 files couldn't be added",
+                    message = "Added 1 file to your plan.",
+                    dismissLabel = "OK",
+                    onDismiss = {},
+                ) {
+                    Text("Screen_recording.mp4")
+                    Text("The video's resolution is already low, so there's little to gain.")
+                    Text("VID_20231224_200145.mp4")
+                    Text("It's already well compressed: converting it would save too little to be worth it.")
+                }
+            }
+        }
+        composeRule.onNode(isDialog()).captureScreenshot(screenshotPath("InfoDialog_${themeMode.name.lowercase()}"))
+    }
 
     private fun confirmDialog(themeMode: ThemeMode) {
         composeRule.setContent {

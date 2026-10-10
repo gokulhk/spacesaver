@@ -4,7 +4,9 @@ import io.github.gokulhk.spacesaver.core.domain.batch.BatchEvent
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStateMachine
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemEvent
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.toItemFailure
 import io.github.gokulhk.spacesaver.core.domain.repository.Batch
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchItem
@@ -98,7 +100,12 @@ class BatchRunner
                 }
 
                 is ItemOutcome.Failed -> {
-                    setItem(ItemStatus.CONVERTING, item, ItemEvent.CONVERSION_FAILED)
+                    setItem(
+                        ItemStatus.CONVERTING,
+                        item,
+                        ItemEvent.CONVERSION_FAILED,
+                        failure = outcome.error.toItemFailure(),
+                    )
                 }
 
                 ItemOutcome.SkippedNoSpace -> {
@@ -118,12 +125,13 @@ class BatchRunner
             item: BatchItem,
             event: ItemEvent,
             converted: ItemOutcome.Converted? = null,
+            failure: ItemFailure? = null,
         ) {
             val to =
                 checkNotNull(
                     stateMachine.transition(from, event).getOrNull(),
                 ) { "Illegal item transition $from + $event" }
-            batchRepository.updateItem(item.id, to, converted?.outputUri, converted?.outputSize)
+            batchRepository.updateItem(item.id, to, converted?.outputUri, converted?.outputSize, failure)
         }
 
         private suspend fun setBatch(

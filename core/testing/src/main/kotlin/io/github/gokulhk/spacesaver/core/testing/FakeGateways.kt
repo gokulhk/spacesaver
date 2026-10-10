@@ -1,6 +1,7 @@
 package io.github.gokulhk.spacesaver.core.testing
 
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionInput
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionResult
@@ -171,6 +172,7 @@ class FakeBatchRepository(
         status: ItemStatus,
         outputUri: String?,
         outputSize: ByteSize?,
+        failure: ItemFailure?,
     ) {
         val batch = batches.value.values.first { batch -> batch.items.any { it.id == id } }
         val items =
@@ -183,6 +185,7 @@ class FakeBatchRepository(
                         outputUri = outputUri ?: item.outputUri,
                         outputSize =
                             outputSize ?: item.outputSize,
+                        failure = failure ?: item.failure,
                     )
                 } else {
                     item

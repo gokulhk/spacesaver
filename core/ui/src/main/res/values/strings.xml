@@ -47,4 +47,37 @@
     <string name="format_h264" translatable="false">H.264</string>
     <string name="format_hevc" translatable="false">HEVC</string>
     <string name="format_video_other">video</string>
+
+    <!-- Why a file in a batch wasn't converted -->
+    <string name="failure_source_unreadable">The original couldn\'t be read. It may have been moved or deleted.</string>
+    <string name="failure_unsupported_audio">This phone can\'t read the video\'s sound format (%s), so it can\'t be compressed without losing the sound.</string>
+    <string name="failure_unsupported_audio_unknown">This phone can\'t read the video\'s sound format, so it can\'t be compressed without losing the sound.</string>
+    <string name="failure_unsupported_video">This phone can\'t read the video\'s picture format (%s), so it can\'t be compressed.</string>
+    <string name="failure_unsupported_video_unknown">This phone can\'t read the video\'s picture format, so it can\'t be compressed.</string>
+    <string name="failure_encoder_unavailable">This phone can\'t save %s files.</string>
+    <string name="failure_encoder_unavailable_unknown">This phone can\'t save this kind of file.</string>
+    <string name="failure_audio_missing">Compression would lose the sound, so the original was kept.</string>
+    <!-- %1$d tracks in the video, %2$d the compressed file would keep. -->
+    <plurals name="failure_audio_tracks_lost">
+        <item quantity="one">This video has %1$d audio track and compression would keep only %2$d, so it was skipped to avoid losing sound.</item>
+        <item quantity="other">This video has %1$d audio tracks and compression would keep only %2$d, so it was skipped to avoid losing sound.</item>
+    </plurals>
+    <string name="failure_audio_tracks_lost_unknown">This video has several audio tracks and compression would keep only one, so it was skipped to avoid losing sound.</string>
+    <!-- %1$d channels in the video, %2$d in the compressed file. -->
+    <plurals name="failure_audio_channels_lost">
+        <item quantity="one">Compression would reduce the sound from %1$d channel to %2$d, so it was skipped to avoid losing sound.</item>
+        <item quantity="other">Compression would reduce the sound from %1$d channels to %2$d, so it was skipped to avoid losing sound.</item>
+    </plurals>
+    <string name="failure_audio_channels_lost_unknown">Compression would reduce the number of sound channels, so it was skipped to avoid losing sound.</string>
+    <string name="failure_verification_failed">The compressed file didn\'t pass the safety checks, so the original was kept.</string>
+    <string name="failure_unknown">Something went wrong with this file. The original is untouched.</string>
+
+    <!-- Why a file can't be added to the plan -->
+    <string name="ineligible_wrong_media_type">This isn\'t a photo or video SpaceSaver can compress.</string>
+    <string name="ineligible_produced_by_spacesaver">Already compressed by SpaceSaver.</string>
+    <string name="ineligible_below_preset_resolution">The video\'s resolution is already low, so there\'s little to gain.</string>
+    <string name="ineligible_unsupported_format">SpaceSaver doesn\'t convert %s files: they\'re already compact.</string>
+    <string name="ineligible_missing_metadata">SpaceSaver couldn\'t read this file\'s size or length, so it can\'t tell how much it would save.</string>
+    <string name="ineligible_savings_too_small">It\'s already well compressed: converting it would save too little to be worth it.</string>
+    <string name="ineligible_already_handled">It\'s already in a batch, or you chose to keep both versions of it.</string>
 </resources>

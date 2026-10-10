@@ -3,7 +3,9 @@ package io.github.gokulhk.spacesaver.core.media.video
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.Metadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.container.Mp4OrientationData
 import androidx.media3.muxer.BufferInfo
 import androidx.media3.muxer.Mp4Muxer
 import androidx.media3.muxer.Muxer
@@ -20,7 +22,8 @@ import java.nio.ByteBuffer
  * blocked by SELinux for writes.
  *
  * Like Media3's `InAppMp4Muxer`, unsupported metadata entries are dropped instead of failing the
- * export; location and creation time are supported and kept.
+ * export (location and creation time are supported and kept), and a video track's rotation is
+ * written to the file.
  */
 @UnstableApi
 class StreamMp4MuxerFactory(
@@ -39,7 +42,21 @@ class StreamMp4MuxerFactory(
     private class FilteringMuxer(
         private val delegate: Mp4Muxer,
     ) : Muxer {
-        override fun addTrack(format: Format): Int = delegate.addTrack(format)
+        /**
+         * Adds the track and, for video, writes its rotation. Media3 encodes portrait video as
+         * landscape frames and carries the turn on the track format; its own muxer wrapper
+         * (`InAppMp4Muxer`) stores it in the file, so this must too, or every portrait video comes
+         * out landscape.
+         */
+        override fun addTrack(format: Format): Int =
+            delegate.addTrack(format).also {
+                if (MimeTypes.isVideo(
+                        format.sampleMimeType,
+                    )
+                ) {
+                    delegate.addMetadataEntry(Mp4OrientationData(format.rotationDegrees))
+                }
+            }
 
         override fun writeSampleData(
             trackId: Int,

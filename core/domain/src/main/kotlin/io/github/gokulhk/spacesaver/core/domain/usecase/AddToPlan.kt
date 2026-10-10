@@ -1,5 +1,6 @@
 package io.github.gokulhk.spacesaver.core.domain.usecase
 
+import io.github.gokulhk.spacesaver.core.domain.eligibility.IneligibleReason
 import io.github.gokulhk.spacesaver.core.domain.repository.PlanAdditionsRepository
 import io.github.gokulhk.spacesaver.core.model.MediaId
 import io.github.gokulhk.spacesaver.core.model.MediaItem
@@ -8,15 +9,25 @@ import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
- * How many files [AddToPlan] added.
+ * A file [AddToPlan] didn't add, and why.
+ *
+ * @property item the file.
+ * @property reason why it can't be made meaningfully smaller.
+ */
+data class RejectedFile(
+    val item: MediaItem,
+    val reason: IneligibleReason,
+)
+
+/**
+ * What [AddToPlan] did.
  *
  * @property added files now in the plan.
- * @property notEligible files that can't be made meaningfully smaller (already efficient formats,
- * small files, or SpaceSaver's own outputs).
+ * @property rejected files that weren't added, each with its reason.
  */
 data class AddToPlanResult(
     val added: Int,
-    val notEligible: Int,
+    val rejected: List<RejectedFile>,
 )
 
 /**
@@ -39,7 +50,9 @@ class AddToPlan
                     .toSet()
             val (added, notEligible) = items.partition { it.id in eligible }
             planAdditions.add(added.map { it.id }.toSet())
-            return AddToPlanResult(added = added.size, notEligible = notEligible.size)
+            val reasons = observeSuggestions.explain(notEligible)
+            val rejected = notEligible.map { RejectedFile(it, reasons[it.id] ?: IneligibleReason.SAVINGS_TOO_SMALL) }
+            return AddToPlanResult(added = added.size, rejected = rejected)
         }
     }
 

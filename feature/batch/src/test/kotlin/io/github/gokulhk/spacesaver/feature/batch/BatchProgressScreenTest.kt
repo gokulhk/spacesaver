@@ -9,6 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.designsystem.theme.SpaceSaverTheme
 import io.github.gokulhk.spacesaver.core.domain.batch.BatchStatus
+import io.github.gokulhk.spacesaver.core.domain.batch.FailureReason
+import io.github.gokulhk.spacesaver.core.domain.batch.ItemFailure
 import io.github.gokulhk.spacesaver.core.domain.batch.ItemStatus
 import io.github.gokulhk.spacesaver.core.domain.repository.BatchId
 import io.github.gokulhk.spacesaver.core.model.ByteSize
@@ -123,6 +125,40 @@ class BatchProgressScreenTest {
         composeRule.onNodeWithText("Done · Saved 60.0 MB").assertIsDisplayed()
         composeRule.onNodeWithText("Done · Kept the original").assertIsDisplayed()
         composeRule.onNodeWithText("Done · Kept both versions").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a failed file says why, in plain words`() {
+        val failures =
+            listOf(
+                ItemFailure(FailureReason.UNSUPPORTED_AUDIO, "audio/ac3") to "AC-3",
+                ItemFailure(FailureReason.AUDIO_TRACKS_LOST, "2/1") to "2 audio tracks",
+                ItemFailure(FailureReason.UNKNOWN) to "Something went wrong",
+            )
+        val items =
+            failures.mapIndexed { index, (failure, _) ->
+                BatchPreviewData
+                    .item(
+                        index + 1L,
+                        "clip$index.mp4",
+                        ItemStatus.FAILED,
+                        original = 100,
+                        output = 40,
+                    ).copy(failure = failure)
+            }
+        val run = BatchPreviewData.awaitingReview.run
+        show(BatchPreviewData.awaitingReview.copy(run = run.copy(batch = run.batch.copy(items = items))))
+
+        failures.forEach { (_, expected) -> composeRule.onNodeWithText(expected, substring = true).assertIsDisplayed() }
+    }
+
+    @Test
+    fun `a failure from before reasons were recorded still reads sensibly`() {
+        val item = BatchPreviewData.item(1, "old.mp4", ItemStatus.FAILED, original = 100, output = 40)
+        val run = BatchPreviewData.awaitingReview.run
+        show(BatchPreviewData.awaitingReview.copy(run = run.copy(batch = run.batch.copy(items = listOf(item)))))
+
+        composeRule.onNodeWithText("Couldn't convert this file", substring = true).assertIsDisplayed()
     }
 
     @Test
