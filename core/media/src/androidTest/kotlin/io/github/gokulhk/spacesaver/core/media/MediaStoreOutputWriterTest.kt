@@ -8,6 +8,7 @@ import android.provider.MediaStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.github.gokulhk.spacesaver.core.media.output.MediaStoreOutputWriter
+import io.github.gokulhk.spacesaver.core.media.output.OutputFolders
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -15,7 +16,7 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Task 4.6: pending outputs in the original's folder, hidden until published. */
+/** Task 4.6: pending outputs in SpaceSaver's own folders, hidden until published. */
 @RunWith(AndroidJUnit4::class)
 class MediaStoreOutputWriterTest {
     private val fixtures = MediaFixtures()
@@ -25,14 +26,43 @@ class MediaStoreOutputWriterTest {
     fun cleanUp() = fixtures.cleanUp()
 
     @Test
-    fun pendingOutputGoesNextToTheOriginalWithTheTargetExtension() =
+    fun photoOutputGoesToTheDedicatedFolderNotNextToTheOriginal() =
         runTest {
-            val original = fixtures.photoJpeg("IMG_42.jpg")
+            val name = "IMG_${System.nanoTime()}"
+            val original = fixtures.photoJpeg("$name.jpg")
 
             val output = writer.createPending(original, MediaFormat.WEBP_LOSSY).also { fixtures.track(it.uri) }
 
-            assertThat(output.displayName).isEqualTo("IMG_42.webp")
-            assertThat(fixtures.namesInFolder(MediaFixtures.images)).contains("IMG_42.webp")
+            assertThat(output.displayName).isEqualTo("$name.webp")
+            assertThat(fixtures.namesInFolder(MediaFixtures.images, OutputFolders.IMAGES)).contains("$name.webp")
+            assertThat(fixtures.namesInFolder(MediaFixtures.images)).doesNotContain("$name.webp")
+        }
+
+    @Test
+    fun videoOutputGoesToTheDedicatedFolderKeepingItsName() =
+        runTest {
+            val name = "VID_${System.nanoTime()}"
+            val original = fixtures.video1080p("$name.mp4")
+
+            val output = writer.createPending(original, MediaFormat.MP4_H264).also { fixtures.track(it.uri) }
+
+            assertThat(output.displayName).isEqualTo("$name.mp4")
+            assertThat(fixtures.namesInFolder(MediaFixtures.videos, OutputFolders.VIDEOS)).contains("$name.mp4")
+            val inOriginalFolder = fixtures.namesInFolder(MediaFixtures.videos)
+            assertThat(inOriginalFolder.filter { it == "$name.mp4" }).hasSize(1) // the original only
+        }
+
+    @Test
+    fun aSecondOutputWithTheSameNameGetsTheCollisionSuffix() =
+        runTest {
+            val name = "VID_${System.nanoTime()}"
+            val original = fixtures.video1080p("$name.mp4")
+
+            val first = writer.createPending(original, MediaFormat.MP4_H264).also { fixtures.track(it.uri) }
+            val second = writer.createPending(original, MediaFormat.MP4_H264).also { fixtures.track(it.uri) }
+
+            assertThat(first.displayName).isEqualTo("$name.mp4")
+            assertThat(second.displayName).isEqualTo("${name}_compressed.mp4")
         }
 
     @Test
@@ -49,16 +79,6 @@ class MediaStoreOutputWriterTest {
 
             assertThat(isPending(output.uri)).isFalse()
             assertThat(visibleWithoutPending(output.uri)).isTrue()
-        }
-
-    @Test
-    fun videoOutputGetsTheCollisionSuffix() =
-        runTest {
-            val original = fixtures.video1080p("VID_7.mp4")
-
-            val output = writer.createPending(original, MediaFormat.MP4_H264).also { fixtures.track(it.uri) }
-
-            assertThat(output.displayName).isEqualTo("VID_7_compressed.mp4")
         }
 
     @Test

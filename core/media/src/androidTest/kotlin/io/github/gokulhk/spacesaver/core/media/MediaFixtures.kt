@@ -115,8 +115,11 @@ class MediaFixtures {
     /** Whether a row with [uri] exists, including pending rows. */
     fun exists(uri: String): Boolean = queryIncludingPending(Uri.parse(uri)) { it.count > 0 }
 
-    /** Display names in [folder] of [collection], including pending rows. */
-    fun namesInFolder(collection: Uri): Set<String> {
+    /** Display names in [folder] of [collection] (this run's folder by default), including pending rows. */
+    fun namesInFolder(
+        collection: Uri,
+        folder: String = this.folder,
+    ): Set<String> {
         val args =
             Bundle().apply {
                 putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "${MediaStore.MediaColumns.RELATIVE_PATH} = ?")

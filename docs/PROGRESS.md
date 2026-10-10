@@ -101,7 +101,7 @@ Task checklist for the MVP, mirroring the plan's Section 8. Tick a task when it 
 - [x] **4.4 Image converters**: `WebpImageConverter` (lossy/lossless) and `HeicImageConverter` (HeifWriter). Pixels stay unrotated; orientation is kept as metadata.
   - Note: for a picture-heavy screenshot, lossless WebP came out ~9% **larger** than Android's PNG. The verifier rejects such outputs. Text-heavy screenshots, the common case, shrink.
 - [x] **4.5 Metadata preservation ⚠️ SPIKE**: EXIF date/offset, GPS, orientation, make/model and `Software=SpaceSaver` for WebP and HEIC; creation time and location for video; MediaStore `DATE_TAKEN` matches after publishing. `DATE_MODIFIED` can't be preserved. Findings: `docs/spikes/metadata-preservation.md`.
-- [x] **4.6 Output writer and verification**: `MediaStoreOutputWriter` (pending rows in the original's folder, `_compressed` suffix, fallback folders), `OutputNaming`, `OutputVerification` (pure), `AndroidOutputProbe` (strict image decode; first **and last** video frame).
+- [x] **4.6 Output writer and verification**: `MediaStoreOutputWriter` (pending rows in the dedicated `Movies/SpaceSaver/` / `Pictures/SpaceSaver/` folders (changed after device testing; originally the original's folder), `_compressed` suffix only on a name collision there), `OutputNaming`, `OutputVerification` (pure), `AndroidOutputProbe` (strict image decode; first **and last** video frame).
   - Note: converters now return a **pending** output; the Phase 5 runner verifies and publishes it.
   - Tests: 25 JVM tests in `:core:media`, 7 in the domain, and 27 instrumented tests, all passing on the `SpaceSaver_Test_API_36` emulator.
 
@@ -202,6 +202,11 @@ Found by running on a physical phone (2026-10-10), each reproduced and fixed wit
   - Batch progress: a failed file shows why ("This phone can't read the video's sound format (AC-3)…", "This video has 2 audio tracks…"). Media3 decoder errors are mapped to `UnsupportedAudio` / `UnsupportedVideo` naming the codec. Reasons are stored with the item (`failure_reason`, `failure_detail`: Room schema version 2, additive migration; old items keep the general line).
   - Home ("Couldn't start the batch") and Review ("Couldn't finish the review") errors are dialogs too (`InfoDialog` in the design system). Snackbars remain only for confirmations.
 - Verified on the emulator through the real UI with 4K phone-shaped videos: portrait (rotation flag and native) converted upright with stereo sound at the same level (-24.1 dB vs -24.09 dB); the two-track and AC-3 videos failed with their reasons; the 720p video was explained in the Browse dialog.
+
+## Output location (after Phase 7)
+
+- [x] Converted files are always written to `Movies/SpaceSaver/` (videos) and `Pictures/SpaceSaver/` (images), never next to the original. Files converted earlier stay where they are
+- Media owner: MediaStore sets `OWNER_PACKAGE_NAME` to the inserting app and an app can't change or clear it (verified on API 36), so outputs show SpaceSaver as owner. Being the owner is also what lets SpaceSaver delete its own rejected outputs without a system dialog
 
 ## Phase 8 — Hardening
 

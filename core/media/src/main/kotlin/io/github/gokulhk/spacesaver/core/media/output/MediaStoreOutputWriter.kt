@@ -33,7 +33,7 @@ data class PendingOutput(
 
 /**
  * Writes converted outputs through MediaStore (plan Section 5.8): created with `IS_PENDING = 1`
- * in the original's folder so nothing half-written shows up in galleries, published only after
+ * in SpaceSaver's own folders ([OutputFolders]) so nothing half-written shows up in galleries, published only after
  * verification. No permission is needed for files the app creates.
  */
 class MediaStoreOutputWriter
@@ -43,21 +43,15 @@ class MediaStoreOutputWriter
         @Dispatcher(AppDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     ) {
         /**
-         * Creates a hidden, empty output for [original] converted to [target]. Uses the original's
-         * folder; if MediaStore doesn't allow that folder for the target collection (e.g. an image
-         * from `Download/`), falls back to `Pictures/SpaceSaver/` or `Movies/SpaceSaver/`.
+         * Creates a hidden, empty output for [original] converted to [target], in the dedicated
+         * [OutputFolders] folder for its media type, whatever folder the original is in.
          */
         suspend fun createPending(
             original: MediaItem,
             target: MediaFormat,
         ): PendingOutput =
             withContext(ioDispatcher) {
-                val folder = original.relativePath ?: defaultFolder(target.mediaType)
-                try {
-                    insertPending(original.displayName, target, folder)
-                } catch (_: IllegalArgumentException) {
-                    insertPending(original.displayName, target, defaultFolder(target.mediaType))
-                }
+                insertPending(original.displayName, target, OutputFolders.of(target.mediaType))
             }
 
         /** Opens [output] for writing from the start. */
@@ -130,11 +124,5 @@ class MediaStoreOutputWriter
             when (type) {
                 MediaType.VIDEO -> MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
                 MediaType.IMAGE -> MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-            }
-
-        private fun defaultFolder(type: MediaType): String =
-            when (type) {
-                MediaType.VIDEO -> "Movies/SpaceSaver/"
-                MediaType.IMAGE -> "Pictures/SpaceSaver/"
             }
     }

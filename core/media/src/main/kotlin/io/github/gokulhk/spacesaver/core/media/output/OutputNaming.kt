@@ -4,7 +4,7 @@ import io.github.gokulhk.spacesaver.core.model.MediaFormat
 
 /**
  * Names converted outputs (plan Section 5.8 step 1): the original's base name with the target
- * extension, in the same folder; `_compressed` (then `_compressed_2`, ...) on collision.
+ * extension, in SpaceSaver's output folder; `_compressed` (then `_compressed_2`, ...) on collision.
  */
 object OutputNaming {
     private const val COLLISION_SUFFIX = "_compressed"

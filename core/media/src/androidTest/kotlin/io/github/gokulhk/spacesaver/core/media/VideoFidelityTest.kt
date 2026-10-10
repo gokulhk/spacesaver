@@ -17,6 +17,7 @@ import io.github.gokulhk.spacesaver.core.domain.result.getOrNull
 import io.github.gokulhk.spacesaver.core.media.output.AndroidOutputGateway
 import io.github.gokulhk.spacesaver.core.media.output.AndroidOutputProbe
 import io.github.gokulhk.spacesaver.core.media.output.MediaStoreOutputWriter
+import io.github.gokulhk.spacesaver.core.media.output.OutputFolders
 import io.github.gokulhk.spacesaver.core.media.video.Media3VideoConverter
 import io.github.gokulhk.spacesaver.core.model.AudioSummary
 import io.github.gokulhk.spacesaver.core.model.Bitrate
@@ -414,7 +415,7 @@ class VideoFidelityTest {
     fun aVideoWhoseSoundtrackCouldNotBeKeptIsRefusedBeforeAnyWork() =
         runTest(timeout = 10.minutes) {
             val original = fixtures.video("video_two_audio_tracks.mp4", "VID_two.mp4", Resolution(1920, 1080))
-            val namesBefore = fixtures.namesInFolder(MediaFixtures.videos)
+            val namesBefore = fixtures.namesInFolder(MediaFixtures.videos, OutputFolders.VIDEOS)
 
             val result = withContext(Dispatchers.Default) { converter.convert(ConversionInput(original), toHd) {} }
 
@@ -424,7 +425,7 @@ class VideoFidelityTest {
                         DomainError.AudioNotPreserved(AudioProblem.TRACKS_LOST, AudioSummary(2, 2), AudioSummary(1, 2)),
                     ),
                 )
-            assertThat(fixtures.namesInFolder(MediaFixtures.videos)).isEqualTo(namesBefore)
+            assertThat(fixtures.namesInFolder(MediaFixtures.videos, OutputFolders.VIDEOS)).isEqualTo(namesBefore)
         }
 
     @Test

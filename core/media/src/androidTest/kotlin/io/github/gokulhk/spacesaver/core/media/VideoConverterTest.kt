@@ -10,6 +10,7 @@ import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionResult
 import io.github.gokulhk.spacesaver.core.domain.conversion.ConversionSpec
 import io.github.gokulhk.spacesaver.core.media.output.AndroidOutputProbe
 import io.github.gokulhk.spacesaver.core.media.output.MediaStoreOutputWriter
+import io.github.gokulhk.spacesaver.core.media.output.OutputFolders
 import io.github.gokulhk.spacesaver.core.media.video.Media3VideoConverter
 import io.github.gokulhk.spacesaver.core.model.Bitrate
 import io.github.gokulhk.spacesaver.core.model.MediaFormat
@@ -89,7 +90,7 @@ class VideoConverterTest {
         runTest(timeout = 10.minutes) {
             val original = fixtures.video4k()
             val started = MutableStateFlow(false)
-            val namesBefore = fixtures.namesInFolder(MediaFixtures.videos)
+            val namesBefore = fixtures.namesInFolder(MediaFixtures.videos, OutputFolders.VIDEOS)
 
             val job =
                 async(Dispatchers.Default) {
@@ -100,7 +101,7 @@ class VideoConverterTest {
             job.cancelAndJoin()
 
             assertThat(job.isCancelled).isTrue()
-            assertThat(fixtures.namesInFolder(MediaFixtures.videos)).isEqualTo(namesBefore)
+            assertThat(fixtures.namesInFolder(MediaFixtures.videos, OutputFolders.VIDEOS)).isEqualTo(namesBefore)
         }
 
     @Test
